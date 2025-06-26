@@ -165,4 +165,7 @@ exports.exportZipFromUrls = async (req, res) => {
     });
     res.send(content);
   } catch (err) {
-    console.error(`
+    console.error(`[${new Date().toISOString()}] Error exporting zip:`, err.message);
+    res.status(500).json({ error: 'Failed to export zip.' });
+  }
+};
