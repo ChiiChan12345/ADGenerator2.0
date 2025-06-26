@@ -86,7 +86,7 @@ function App() {
     formData.append('prompt', promptString);
 
     try {
-      const response = await fetch('http://localhost:3000/api/process', {
+      const response = await fetch('/api/process', {
         method: 'POST',
         body: formData,
       });
@@ -117,7 +117,7 @@ function App() {
     setError('');
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/api/export-zip', {
+      const response = await fetch('/api/export-zip', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
