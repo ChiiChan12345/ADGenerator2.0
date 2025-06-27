@@ -189,7 +189,7 @@ body::before {
 .upload-box {
   border: 2px dashed rgba(102, 126, 234, 0.3);
   border-radius: var(--radius-xl);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-lg);
   text-align: center;
   background: linear-gradient(135deg, 
     rgba(102, 126, 234, 0.05) 0%, 
@@ -199,7 +199,7 @@ body::before {
   -webkit-backdrop-filter: blur(15px);
   transition: all var(--transition-normal);
   position: relative;
-  min-height: 180px;
+  min-height: 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -219,7 +219,7 @@ body::before {
 }
 
 .upload-box h3 {
-  margin: 0 0 var(--spacing-md) 0;
+  margin: 0 0 var(--spacing-sm) 0;
   color: var(--text-primary);
   font-size: var(--font-lg);
   font-weight: 700;
@@ -231,9 +231,9 @@ body::before {
 
 .upload-instructions {
   color: var(--text-secondary);
-  font-size: var(--font-md);
-  margin-bottom: var(--spacing-lg);
-  line-height: 1.6;
+  font-size: var(--font-sm);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.5;
   font-weight: 500;
 }
 
@@ -243,8 +243,8 @@ body::before {
 }
 
 .upload-icon {
-  font-size: 3rem;
-  margin-bottom: var(--spacing-md);
+  font-size: 2.5rem;
+  margin-bottom: var(--spacing-sm);
   opacity: 0.7;
   transition: all var(--transition-normal);
 }

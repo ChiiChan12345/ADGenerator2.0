@@ -81,6 +81,11 @@ function App() {
     setDragOver(true);
   }, []);
 
+  const handleDragEnter = useCallback((e) => {
+    e.preventDefault();
+    setDragOver(true);
+  }, []);
+
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
     setDragOver(false);
@@ -437,6 +442,7 @@ function App() {
               className={`upload-box ${dragOver ? 'drag-over' : ''}`}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
+              onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onClick={() => fileInputRef.current?.click()}
             >
@@ -493,63 +499,79 @@ function App() {
 
           <div className={`form-group ${fieldErrors.vertical ? 'has-error' : vertical ? 'has-success' : ''}`}>
             <label>
-              Brand Name
+              Vertical
             </label>
             <input
               type="text"
               value={vertical}
               onChange={handleVerticalChange}
-              placeholder="Enter your brand name"
+              placeholder="Enter vertical (e.g., Health & Wellness)"
               required
             />
             {fieldErrors.vertical && (
               <div className="field-hint error">Please enter at least 2 characters</div>
             )}
             {vertical && !fieldErrors.vertical && (
-              <div className="field-hint success">✓ Valid brand name specified</div>
+              <div className="field-hint success">✓ Valid vertical specified</div>
             )}
           </div>
 
-          <div className={`form-group ${fieldErrors.ageGroup ? 'has-error' : ageGroup ? 'has-success' : ''}`}>
+          <div className={`form-group ${fieldErrors.angle ? 'has-error' : angle ? 'has-success' : ''}`}>
             <label>
-              Product Category
+              Angle
             </label>
-            <select
-              value={ageGroup}
-              onChange={handleAgeGroupChange}
+            <input
+              type="text"
+              value={angle}
+              onChange={handleAngleChange}
+              placeholder="Enter creative angle (e.g., Problem-solution approach)"
               required
-            >
-              <option value="">Select category</option>
-              <option value="electronics">Electronics</option>
-              <option value="fashion">Fashion & Apparel</option>
-              <option value="home">Home & Garden</option>
-              <option value="beauty">Beauty & Personal Care</option>
-              <option value="sports">Sports & Outdoors</option>
-              <option value="automotive">Automotive</option>
-              <option value="books">Books & Media</option>
-              <option value="toys">Toys & Games</option>
-              <option value="health">Health & Wellness</option>
-              <option value="food">Food & Beverages</option>
-              <option value="other">Other</option>
-            </select>
-            {ageGroup && !fieldErrors.ageGroup && (
-              <div className="field-hint success">✓ Product category specified</div>
+            />
+            {fieldErrors.angle && (
+              <div className="field-hint error">Please enter at least 5 characters</div>
+            )}
+            {angle && !fieldErrors.angle && (
+              <div className="field-hint success">✓ Good angle description</div>
             )}
           </div>
 
           <div className={`form-group ${fieldErrors.sentiment ? 'has-error' : sentiment ? 'has-success' : ''}`}>
             <label>
-              Target Audience
+              Sentiment
+            </label>
+            <select
+              value={sentiment}
+              onChange={handleSentimentChange}
+              required
+            >
+              <option value="">Select a sentiment...</option>
+              {sentimentOptions.map(option => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            {sentiment && (
+              <div className="field-hint success">✓ Sentiment selected</div>
+            )}
+          </div>
+
+          <div className={`form-group ${fieldErrors.ageGroup ? 'has-error' : ageGroup ? 'has-success' : ''}`}>
+            <label>
+              Age Group
             </label>
             <input
               type="text"
-              value={sentiment}
-              onChange={handleSentimentChange}
-              placeholder="e.g., Young professionals, Parents, Tech enthusiasts"
+              value={ageGroup}
+              onChange={handleAgeGroupChange}
+              placeholder="Enter age group (e.g., 25-35)"
               required
             />
-            {sentiment && (
-              <div className="field-hint success">✓ Target audience specified</div>
+            {fieldErrors.ageGroup && (
+              <div className="field-hint error">Please enter at least 2 characters</div>
+            )}
+            {ageGroup && !fieldErrors.ageGroup && (
+              <div className="field-hint success">✓ Target age group specified</div>
             )}
           </div>
 
