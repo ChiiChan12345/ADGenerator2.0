@@ -190,6 +190,34 @@ function App() {
     }
   };
 
+  // Enhanced copy function for prompts with visual feedback
+  const copyPromptToClipboard = async (text, index) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedPrompts(prev => ({ ...prev, [index]: true }));
+      setTimeout(() => {
+        setCopiedPrompts(prev => ({ ...prev, [index]: false }));
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopiedPrompts(prev => ({ ...prev, [index]: true }));
+        setTimeout(() => {
+          setCopiedPrompts(prev => ({ ...prev, [index]: false }));
+        }, 2000);
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed: ', fallbackErr);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
   // Lazy image loading component
   const LazyImage = ({ src, alt, className, onClick }) => {
     const [loaded, setLoaded] = useState(false);
@@ -222,8 +250,27 @@ function App() {
         ref={imgRef} 
         className={`lazy-image ${loaded ? 'loaded' : ''} ${error ? 'error' : ''} ${className}`}
         onClick={onClick}
+        style={{ width: '100%', height: '100%', minHeight: '200px' }}
       >
-        {loaded && !error && <img src={src} alt={alt} />}
+        {loaded && !error && (
+          <img 
+            src={src} 
+            alt={alt} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        )}
+        {error && (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            height: '100%',
+            color: 'var(--error-color)',
+            fontSize: 'var(--font-sm)'
+          }}>
+            ❌ Failed to load
+          </div>
+        )}
       </div>
     );
   };
@@ -376,8 +423,14 @@ function App() {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
           >
             <h3>Upload Images</h3>
+            <div className="upload-instructions">
+              <strong>Choose files</strong> or <strong>drag and drop</strong>
+              <br />
+              Supports: JPG, PNG, GIF, WebP
+            </div>
             <div className="drag-indicator">Drop images here</div>
             <input
               ref={fileInputRef}
@@ -395,7 +448,10 @@ function App() {
                     <button 
                       type="button"
                       className="image-preview-remove"
-                      onClick={() => removeImage(preview.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeImage(preview.id);
+                      }}
                     >
                       ×
                     </button>
@@ -582,37 +638,40 @@ function App() {
           <button
             className='export-all-btn'
             onClick={handleExportAll}
-            style={{ marginBottom: '1rem' }}
+            disabled={loading}
           >
-            Export All as ZIP
+            📦 Export All as ZIP
           </button>
           <div className='images'>
             {results.map((url, idx) => (
               <div key={url} className='image-block'>
-                <LazyImage
-                  src={url}
-                  alt={`Generated ${idx + 1}`}
-                  className="clickable-image"
-                  onClick={() => handleImageClick(url, prompts[idx])}
-                />
+                <div className="image-container">
+                  <LazyImage
+                    src={url}
+                    alt={`Generated ${idx + 1}`}
+                    className="clickable-image"
+                    onClick={() => handleImageClick(url, prompts[idx])}
+                  />
+                </div>
                 <a
                   href={url}
-                  download
+                  download={`generated-image-${idx + 1}.jpg`}
                   target='_blank'
                   rel='noopener noreferrer'
                   className='download-btn'
                 >
-                  Download
+                  ⬇️ Download Image
                 </a>
                 {prompts[idx] && (
-                  <div className='prompt-caption'>
+                  <div 
+                    className='prompt-caption'
+                    onClick={() => copyPromptToClipboard(prompts[idx], idx)}
+                    title="Click to copy prompt"
+                  >
                     {prompts[idx]}
-                    <button
-                      className={`copy-button ${copiedPrompts[idx] ? 'copied' : ''}`}
-                      onClick={() => copyToClipboard(prompts[idx], idx)}
-                    >
-                      {copiedPrompts[idx] ? '✓ Copied!' : 'Copy Prompt'}
-                    </button>
+                    <div className={`copy-feedback ${copiedPrompts[idx] ? 'show' : ''}`}>
+                      Copied!
+                    </div>
                   </div>
                 )}
               </div>
@@ -642,7 +701,7 @@ function App() {
                 {selectedImage.prompt}
                 <button
                   className={`copy-button ${copiedPrompts['modal'] ? 'copied' : ''}`}
-                  onClick={() => copyToClipboard(selectedImage.prompt, 'modal')}
+                  onClick={() => copyPromptToClipboard(selectedImage.prompt, 'modal')}
                 >
                   {copiedPrompts['modal'] ? '✓ Copied!' : 'Copy Prompt'}
                 </button>
