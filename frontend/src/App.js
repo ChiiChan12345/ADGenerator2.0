@@ -422,166 +422,154 @@ function App() {
     setSelectedImage(null);
   };
 
+  const renderTooltip = (text) => {
+    return null; // Hide all tooltips
+  };
+
   return (
     <div className='container'>
       {/* Form Section - 20% */}
       <div className="form-section">
         <h1>ADGenerator2.0</h1>
         <form onSubmit={handleSubmit} className='form'>
-          <div className='upload-section'>
+          <div className="upload-section">
             <div 
               className={`upload-box ${dragOver ? 'drag-over' : ''}`}
+              onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
             >
-              <h3>Upload Images</h3>
+              <div className="upload-icon">📁</div>
+              <h3>Upload Product Images</h3>
               <div className="upload-instructions">
-                <strong>Choose files</strong> or <strong>drag and drop</strong>
+                <strong>Choose files</strong> or <strong>drag and drop</strong> your product images here
                 <br />
-                Supports: JPG, PNG, GIF, WebP
+                Supports JPG, PNG, GIF • Max 10MB per file
               </div>
-              <div className="drag-indicator">Drop images here</div>
               <input
                 ref={fileInputRef}
-                type='file'
-                accept='image/*'
+                type="file"
                 multiple
+                accept="image/*"
                 onChange={handleImageChange}
-                className='file-input'
+                style={{ display: 'none' }}
               />
-              {imagePreviews.length > 0 && (
+              {dragOver && (
+                <div className="drag-indicator">
+                  Drop images here
+                </div>
+              )}
+            </div>
+
+            {imagePreviews.length > 0 && (
+              <>
                 <div className="image-preview-container">
-                  {imagePreviews.map(preview => (
-                    <div key={preview.id} className="image-preview">
-                      <img src={preview.url} alt="Preview" />
-                      <button 
-                        type="button"
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="image-preview">
+                      <img 
+                        src={preview.url} 
+                        alt={`Preview ${index + 1}`}
+                      />
+                      <button
                         className="image-preview-remove"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeImage(preview.id);
                         }}
+                        title="Remove image"
                       >
                         ×
                       </button>
                     </div>
                   ))}
                 </div>
-              )}
-              {images.length > 0 && <p className='file-info'>{images.length} image(s) selected</p>}
-            </div>
+                <div className="file-info">
+                  ✓ {imagePreviews.length} image{imagePreviews.length !== 1 ? 's' : ''} selected
+                </div>
+              </>
+            )}
           </div>
 
           <div className={`form-group ${fieldErrors.vertical ? 'has-error' : vertical ? 'has-success' : ''}`}>
-            <Tooltip 
-              text="Specify the business vertical or industry (e.g., 'Health & Wellness', 'Technology', 'Fashion')"
-            >
-              <label htmlFor='vertical'>Vertical:</label>
-            </Tooltip>
+            <label>
+              Brand Name
+            </label>
             <input
-              type='text'
-              id='vertical'
+              type="text"
               value={vertical}
               onChange={handleVerticalChange}
-              placeholder='Enter vertical (e.g., Health & Wellness)'
+              placeholder="Enter your brand name"
               required
             />
             {fieldErrors.vertical && (
               <div className="field-hint error">Please enter at least 2 characters</div>
             )}
             {vertical && !fieldErrors.vertical && (
-              <div className="field-hint success">✓ Valid vertical specified</div>
-            )}
-          </div>
-
-          <div className={`form-group ${fieldErrors.angle ? 'has-error' : angle ? 'has-success' : ''}`}>
-            <Tooltip 
-              text="Describe the unique angle or perspective for the ad (e.g., 'Before/After transformation', 'Problem-solution approach')"
-            >
-              <label htmlFor='angle'>Angle:</label>
-            </Tooltip>
-            <input
-              type='text'
-              id='angle'
-              value={angle}
-              onChange={handleAngleChange}
-              placeholder='Enter creative angle (e.g., Problem-solution approach)'
-              required
-            />
-            {fieldErrors.angle && (
-              <div className="field-hint error">Please enter at least 5 characters</div>
-            )}
-            {angle && !fieldErrors.angle && (
-              <div className="field-hint success">✓ Good angle description</div>
-            )}
-          </div>
-
-          <div className={`form-group ${fieldErrors.sentiment ? 'has-error' : sentiment ? 'has-success' : ''}`}>
-            <Tooltip 
-              text="Choose the emotional tone and style for your ad copy and imagery"
-            >
-              <label htmlFor='sentiment'>Sentiment:</label>
-            </Tooltip>
-            <select
-              id='sentiment'
-              value={sentiment}
-              onChange={handleSentimentChange}
-              className='sentiment-select'
-              required
-            >
-              <option value=''>Select a sentiment...</option>
-              {sentimentOptions.map(option => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            {sentiment && (
-              <div className="field-hint success">✓ Sentiment selected</div>
+              <div className="field-hint success">✓ Valid brand name specified</div>
             )}
           </div>
 
           <div className={`form-group ${fieldErrors.ageGroup ? 'has-error' : ageGroup ? 'has-success' : ''}`}>
-            <Tooltip 
-              text="Target age demographic for the ad (e.g., '25-35', '18-24', '35-50')"
-            >
-              <label htmlFor='ageGroup'>Age Group:</label>
-            </Tooltip>
-            <input
-              type='text'
-              id='ageGroup'
+            <label>
+              Product Category
+            </label>
+            <select
               value={ageGroup}
               onChange={handleAgeGroupChange}
-              placeholder='Enter age group (e.g., 25-35)'
+              required
+            >
+              <option value="">Select category</option>
+              <option value="electronics">Electronics</option>
+              <option value="fashion">Fashion & Apparel</option>
+              <option value="home">Home & Garden</option>
+              <option value="beauty">Beauty & Personal Care</option>
+              <option value="sports">Sports & Outdoors</option>
+              <option value="automotive">Automotive</option>
+              <option value="books">Books & Media</option>
+              <option value="toys">Toys & Games</option>
+              <option value="health">Health & Wellness</option>
+              <option value="food">Food & Beverages</option>
+              <option value="other">Other</option>
+            </select>
+            {ageGroup && !fieldErrors.ageGroup && (
+              <div className="field-hint success">✓ Product category specified</div>
+            )}
+          </div>
+
+          <div className={`form-group ${fieldErrors.sentiment ? 'has-error' : sentiment ? 'has-success' : ''}`}>
+            <label>
+              Target Audience
+            </label>
+            <input
+              type="text"
+              value={sentiment}
+              onChange={handleSentimentChange}
+              placeholder="e.g., Young professionals, Parents, Tech enthusiasts"
               required
             />
-            {fieldErrors.ageGroup && (
-              <div className="field-hint error">Please enter at least 2 characters</div>
-            )}
-            {ageGroup && !fieldErrors.ageGroup && (
-              <div className="field-hint success">✓ Target age group specified</div>
+            {sentiment && (
+              <div className="field-hint success">✓ Target audience specified</div>
             )}
           </div>
 
           <div className="form-group">
-            <Tooltip 
-              text="Choose how many images to generate (1-10). More images = more variety but longer generation time"
-            >
-              <label htmlFor='numImages'>Number of Images:</label>
-            </Tooltip>
+            <label>
+              Number of Images to Generate
+            </label>
             <div className="number-input-group">
               <input
-                type='number'
-                id='numImages'
+                type="number"
+                className="number-input"
                 value={numImages}
                 onChange={handleNumImagesChange}
                 min="1"
                 max="10"
-                className="number-input"
+                required
               />
-              <span className="number-label">images to generate</span>
+              <span className="number-label">
+                {numImages === 1 ? 'image' : 'images'}
+              </span>
             </div>
           </div>
 
