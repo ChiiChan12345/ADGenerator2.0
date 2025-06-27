@@ -280,30 +280,95 @@ exports.processImage = async (req, res) => {
       promptLength: prompt.length,
     });
 
-    // Create progress tracking task
-    const taskId = progressTracker.generateTaskId();
-    const totalSteps = files.length * (constants.PROMPTS_COUNT + 1);
-    progressTracker.createTask(taskId, {
-      totalSteps,
-      filesCount: files.length,
-      promptsPerFile: constants.PROMPTS_COUNT,
+    // Process images synchronously and return results directly
+    const results = [];
+    const prompts = [];
+    const startTime = Date.now();
+
+    for (const [fileIndex, file] of files.entries()) {
+      try {
+        logger.info(`Processing file ${fileIndex + 1}/${files.length}: ${file.originalname}`);
+
+        // Optimize image
+        const optimized = await optimizeImage(file.buffer, file.mimetype);
+
+        // Check cache first
+        const cacheKey = `process_${Buffer.from(optimized.buffer).toString('base64', 0, 32)}_${Buffer.from(prompt).toString('base64', 0, 32)}`;
+        const cached = await cache.get(cacheKey);
+
+        if (cached) {
+          logger.info(`Using cached results for ${file.originalname}`);
+          results.push(...(cached.results || []));
+          prompts.push(...(cached.prompts || []));
+          continue;
+        }
+
+        // Generate prompts with OpenAI
+        logger.info(`Generating marketing prompts for ${file.originalname}...`);
+        const filePrompts = await callOpenAI(optimized.buffer, optimized.mimetype, prompt);
+        prompts.push(...filePrompts);
+
+        // Generate images for each prompt
+        for (let promptIndex = 0; promptIndex < filePrompts.length; promptIndex++) {
+          const promptText = filePrompts[promptIndex];
+
+          try {
+            logger.debug(`Generating image ${promptIndex + 1}/${filePrompts.length} for file ${fileIndex + 1}`);
+            const imageUrls = await callIdeogram(promptText);
+            results.push(...imageUrls);
+          } catch (error) {
+            logger.error(`Error generating image for prompt ${promptIndex + 1}:`, {
+              error: error.message,
+              promptText: promptText.substring(0, 100),
+            });
+            // Continue with other prompts
+          }
+        }
+
+        // Cache the results for future use (24 hour TTL)
+        await cache.set(
+          cacheKey,
+          {
+            prompts: filePrompts,
+            results: results.slice(-filePrompts.length * 2), // Rough estimate of new results
+            metadata: optimized.metadata,
+          },
+          24 * 3600
+        );
+
+        logger.info(`Completed processing file ${fileIndex + 1}`, {
+          generatedImages: results.length,
+          cached: true,
+        });
+      } catch (error) {
+        logger.error(`Error processing file ${file.originalname}:`, {
+          error: error.message,
+          stack: error.stack,
+        });
+      }
+    }
+
+    const processingTime = Date.now() - startTime;
+    logger.info('Image processing completed', {
+      totalResults: results.length,
+      totalPrompts: prompts.length,
+      processingTimeMs: processingTime,
     });
 
-    // Return task ID immediately so client can track progress
+    // Return results directly (synchronous response)
     res.json({
-      taskId,
-      message: 'Processing started. Use /api/progress/' + taskId + ' to track progress.',
-      estimatedTime: `${Math.ceil(totalSteps * 2)} seconds`,
+      results,
+      prompts,
+      processingTime,
+      totalImages: results.length,
     });
 
-    // Continue processing in background
-    processImagesInBackground(taskId, files, prompt);
   } catch (error) {
-    logger.error('Error starting image processing:', {
+    logger.error('Error processing images:', {
       error: error.message,
       stack: error.stack,
     });
-    res.status(500).json({ error: error.message || 'Error starting image processing.' });
+    res.status(500).json({ error: error.message || 'Error processing images.' });
   }
 };
 
