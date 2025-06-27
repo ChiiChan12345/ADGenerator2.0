@@ -167,7 +167,7 @@ function App() {
   // Handle number of images change
   const handleNumImagesChange = e => {
     const value = parseInt(e.target.value);
-    if (value >= 1 && value <= 10) {
+    if (value >= 1 && value <= 20) {
       setNumImages(value);
     }
   };
@@ -552,28 +552,38 @@ function App() {
           <div className="form-group form-row">
             <label style={{ width: '100%' }}>Age Range & Number of Images</label>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              <select value={ageFrom} onChange={e => setAgeFrom(Number(e.target.value))} style={{ width: 60 }}>
-                {[...Array(48)].map((_, i) => (
-                  <option key={i} value={i + 18}>{i + 18}</option>
-                ))}
-              </select>
+              <div style={{ position: 'relative', width: 60 }}>
+                <select value={ageFrom} onChange={e => setAgeFrom(Number(e.target.value))} style={{ width: '100%', paddingRight: 28, backgroundPosition: 'right 8px center' }}>
+                  {[...Array(48)].map((_, i) => (
+                    <option key={i} value={i + 18}>{i + 18}</option>
+                  ))}
+                </select>
+                {/* Custom arrow for select */}
+                <span className="custom-select-arrow" style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>&#9662;</span>
+              </div>
               <span style={{ fontWeight: 600, color: '#667eea' }}>to</span>
-              <select value={ageTo} onChange={e => setAgeTo(Number(e.target.value))} style={{ width: 60 }}>
-                {[...Array(48)].map((_, i) => (
-                  <option key={i} value={i + 18}>{i + 18}</option>
-                ))}
-              </select>
+              <div style={{ position: 'relative', width: 60 }}>
+                <select value={ageTo} onChange={e => setAgeTo(Number(e.target.value))} style={{ width: '100%', paddingRight: 28, backgroundPosition: 'right 8px center' }}>
+                  {[...Array(48)].map((_, i) => (
+                    <option key={i} value={i + 18}>{i + 18}</option>
+                  ))}
+                </select>
+                <span className="custom-select-arrow" style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>&#9662;</span>
+              </div>
               <span style={{ marginLeft: 10, fontWeight: 600 }}>Images:</span>
-              <input
-                type="number"
-                className="number-input"
-                value={numImages}
-                onChange={handleNumImagesChange}
-                min="1"
-                max="10"
-                required
-                style={{ width: 60 }}
-              />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 60 }}>
+                <input
+                  type="number"
+                  className="number-input"
+                  value={numImages}
+                  onChange={handleNumImagesChange}
+                  min="1"
+                  max="20"
+                  required
+                  style={{ width: '100%' }}
+                />
+                <span style={{ fontSize: '0.7rem', color: '#b0b0b0', marginTop: 2 }}>Max: 20</span>
+              </div>
             </div>
           </div>
 
@@ -621,12 +631,33 @@ function App() {
 
       {/* Results Section - 80% */}
       <div className="results-section">
+        {/* Progress Bar at Top of Results Section */}
+        {showProgress && (
+          <div className="progress-bar-horizontal-wrapper">
+            <div className="progress-bar-horizontal">
+              <div className="progress-bar-horizontal-fill" style={{ width: `${progressPercent}%` }}></div>
+            </div>
+            <div className="progress-bar-horizontal-steps">
+              {progressSteps.map((step, index) => (
+                <div
+                  key={index}
+                  className={`progress-bar-horizontal-step ${
+                    index < currentStep ? 'completed' : index === currentStep ? 'active' : ''
+                  }`}
+                >
+                  {step}
+                </div>
+              ))}
+            </div>
+            <div className="progress-bar-horizontal-info">
+              <span>{progressMessage}</span>
+              <span>{progressPercent}%</span>
+            </div>
+          </div>
+        )}
         {/* Loading Skeletons */}
         {loading && !results.length && (
           <div className='results'>
-            <h2>
-              <span className="typing-indicator">Generating Images</span>
-            </h2>
             <div className='images'>
               {Array.from({ length: numImages }).map((_, index) => (
                 <div key={index} className='loading-skeleton'>
@@ -639,7 +670,6 @@ function App() {
             </div>
           </div>
         )}
-
         {/* Empty State */}
         {!loading && results.length === 0 && images.length === 0 && (
           <div className="empty-state">
@@ -656,20 +686,19 @@ function App() {
             </button>
           </div>
         )}
-
         {/* Results */}
         {results.length > 0 && !loading && (
           <div className='results'>
-            <div className="results-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
-              <button className="export-all-btn" onClick={handleExportAll} disabled={loading}>
+            <div className="results-header" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', marginBottom: '18px' }}>
+              <button className="export-all-btn" onClick={handleExportAll} disabled={loading} style={{ marginBottom: 0 }}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ marginRight: 6 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
                 Export all as zip
               </button>
-              <button className="generate-button" style={{ width: 'auto', padding: '8px 18px' }} onClick={() => setSelectMode(sm => !sm)} type="button">
+              <button className="generate-button" style={{ width: 'auto', padding: '12px 32px', fontSize: '1.1rem' }} onClick={() => setSelectMode(sm => !sm)} type="button">
                 {selectMode ? 'Cancel Selection' : 'Select to Regenerate'}
               </button>
               {selectMode && selectedForRegen.length > 0 && (
-                <button className="generate-button" style={{ width: 'auto', padding: '8px 18px', background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)' }} onClick={handleRegenerateSelected} type="button">
+                <button className="generate-button" style={{ width: 'auto', padding: '12px 32px', fontSize: '1.1rem', background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)' }} onClick={handleRegenerateSelected} type="button">
                   Regenerate Selected
                 </button>
               )}
@@ -680,14 +709,24 @@ function App() {
                   key={idx}
                   className={`image-card${selectMode ? ' selectable' : ''}${selectedForRegen.includes(idx) ? ' selected' : ''}`}
                   onClick={selectMode ? () => toggleSelect(idx) : undefined}
-                  style={selectMode ? { cursor: 'pointer', border: selectedForRegen.includes(idx) ? '2px solid #667eea' : '2px solid transparent' } : {}}
+                  style={selectMode ? { cursor: 'pointer', border: selectedForRegen.includes(idx) ? '2px solid #667eea' : '2px solid transparent', position: 'relative' } : {}}
                 >
-                  <div className="image-container">
+                  <div className="image-container" style={{ position: 'relative' }}>
+                    {selectMode && (
+                      <input
+                        type="checkbox"
+                        checked={selectedForRegen.includes(idx)}
+                        onChange={() => toggleSelect(idx)}
+                        className="image-select-checkbox"
+                        style={{ position: 'absolute', top: 10, left: 10, zIndex: 2, width: 22, height: 22, accentColor: '#667eea', borderRadius: 4 }}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    )}
                     <LazyImage
                       src={url}
                       alt={`Generated ${idx + 1}`}
                       className="clickable-image"
-                      onClick={() => handleImageClick(url, prompts[idx])}
+                      onClick={selectMode ? undefined : () => handleImageClick(url, prompts[idx])}
                     />
                   </div>
                   <a
@@ -700,7 +739,7 @@ function App() {
                     Download
                   </a>
                   {prompts[idx] && (
-                    <div className="prompt-text">
+                    <div className="prompt-text" style={{ cursor: 'default', userSelect: 'text' }}>
                       {prompts[idx]}
                     </div>
                   )}
