@@ -407,6 +407,7 @@ function App() {
   const handleImageClick = (idx) => {
     if (!selectMode) {
       setSelectedImage(images[idx]);
+      setShowModal(true);
     }
   };
 
@@ -441,7 +442,7 @@ function App() {
     <div className='container'>
       {/* Form Section - 20% */}
       <div className="form-section">
-        <h1 className="main-title" style={{ marginTop: '8px' }}>AD Generator 2.0</h1>
+        <h1 className="main-title" style={{ marginTop: '0px' }}>AD Generator 2.0</h1>
         <form onSubmit={handleSubmit} className='form'>
           <div className="upload-section">
             <div 
@@ -601,13 +602,7 @@ function App() {
 
           {error && <div className='error'>{error}</div>}
 
-          <button type='submit' disabled={loading} className={`generate-button ${loading ? 'loading' : ''}`}>
-            {loading ? (
-              <span className="loading-dots">Generating</span>
-            ) : (
-              `Generate ${numImages} Image${numImages !== 1 ? 's' : ''}`
-            )}
-          </button>
+          <button className="generate-btn" type="submit" disabled={loading}>Generate {numImages} images</button>
         </form>
       </div>
 
@@ -676,10 +671,18 @@ function App() {
                 <span className="results-folder-icon">📦</span>
               </div>
               <div className="results-header-buttons">
-                <button className="export-all-btn" onClick={handleExportAll} disabled={loading}>Export all as zip</button>
-                <button className="results-header-btn regen-btn" style={{ width: 'auto', padding: '12px 28px', fontSize: '1.05rem' }} onClick={() => setSelectMode(sm => !sm)} type="button">
+                <button className="export-all-btn" onClick={handleExportAll} disabled={loading}>
+                  <span role="img" aria-label="box" style={{ marginRight: 6 }}>📦</span>
+                  Export all as zip
+                </button>
+                <button className="results-header-btn regen-btn" onClick={() => setSelectMode(sm => !sm)} type="button">
                   {selectMode ? 'Cancel Selection' : 'Select to Regenerate'}
                 </button>
+                {selectMode && selectedForRegen.length > 0 && (
+                  <button className="regenerate-selected-btn" onClick={handleRegenerateSelected} type="button">
+                    Regenerate Selected
+                  </button>
+                )}
               </div>
             </div>
             <div className='images'>
@@ -732,11 +735,6 @@ function App() {
                 </div>
               ))}
             </div>
-            {selectMode && selectedForRegen.length > 0 && (
-              <button className="regenerate-selected-btn" onClick={handleRegenerateSelected} type="button">
-                Regenerate Selected
-              </button>
-            )}
           </div>
         )}
       </div>
