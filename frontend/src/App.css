@@ -178,7 +178,7 @@ body::before {
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-md);
 }
 
 /* Enhanced Upload Section */
@@ -256,7 +256,7 @@ body::before {
 
 /* Enhanced Form Groups */
 .form-group {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
   position: relative;
 }
 
@@ -747,4 +747,14 @@ body::before {
 
 .form-section::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.7);
+}
+
+/* Remove keyboard shortcuts bar */
+.shortcuts-bar, .shortcuts-bar *, .keyboard-shortcuts, .keyboard-shortcuts * {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
 }

@@ -468,11 +468,15 @@ function App() {
               )}
             </div>
 
-            {imagePreviews.length > 0 && (
+            {(imagePreviews.length > 0 || images.length > 0) && (
               <>
                 <div className="image-preview-container">
-                  {imagePreviews.map((preview, index) => (
-                    <div key={index} className="image-preview">
+                  {(imagePreviews.length > 0 ? imagePreviews : images.map((file, index) => ({
+                    file,
+                    url: URL.createObjectURL(file),
+                    id: index
+                  }))).map((preview, index) => (
+                    <div key={preview.id || index} className="image-preview">
                       <img 
                         src={preview.url} 
                         alt={`Preview ${index + 1}`}
@@ -481,7 +485,7 @@ function App() {
                         className="image-preview-remove"
                         onClick={(e) => {
                           e.stopPropagation();
-                          removeImage(preview.id);
+                          removeImage(preview.id || index);
                         }}
                         title="Remove image"
                       >
@@ -491,7 +495,7 @@ function App() {
                   ))}
                 </div>
                 <div className="file-info">
-                  ✓ {imagePreviews.length} image{imagePreviews.length !== 1 ? 's' : ''} selected
+                  ✓ {(imagePreviews.length > 0 ? imagePreviews.length : images.length)} image{(imagePreviews.length > 0 ? imagePreviews.length : images.length) !== 1 ? 's' : ''} selected
                 </div>
               </>
             )}
@@ -755,20 +759,6 @@ function App() {
           </div>
         </div>
       )}
-
-      {/* Keyboard Shortcuts */}
-      <div className="keyboard-shortcuts">
-        <div className="keyboard-shortcut">
-          <span className="key">Ctrl</span>
-          <span>+</span>
-          <span className="key">Enter</span>
-          <span>Generate</span>
-        </div>
-        <div className="keyboard-shortcut">
-          <span className="key">Esc</span>
-          <span>Close Modal</span>
-        </div>
-      </div>
     </div>
   );
 }
