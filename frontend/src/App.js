@@ -404,8 +404,10 @@ function App() {
     }
   };
 
-  const handleImageClick = (url, prompt) => {
-    setSelectedImage({ url, prompt });
+  const handleImageClick = (idx) => {
+    if (!selectMode) {
+      setSelectedImage(images[idx]);
+    }
   };
 
   const handleCloseModal = () => {
@@ -421,17 +423,17 @@ function App() {
   };
 
   const handleRegenerateSelected = () => {
-    setRegeneratingImages(selectedImages);
-    // For each selected image, generate a new prompt and update the image (simulate new image)
+    setRegenerating(selectedForRegen);
     const newImages = images.map((img, idx) =>
-      selectedImages.includes(idx)
+      selectedForRegen.includes(idx)
         ? { ...img, prompt: generateNewPrompt(), url: getNewImageUrl() }
         : img
     );
     setTimeout(() => {
       setImages(newImages);
-      setRegeneratingImages([]);
-      setSelectedImages([]);
+      setRegenerating([]);
+      setSelectedForRegen([]);
+      setSelectMode(false);
     }, 2000);
   };
 
@@ -439,7 +441,7 @@ function App() {
     <div className='container'>
       {/* Form Section - 20% */}
       <div className="form-section">
-        <h1 className="main-title" style={{ marginTop: '18px' }}>AD Generator 2.0</h1>
+        <h1 className="main-title" style={{ marginTop: '8px' }}>AD Generator 2.0</h1>
         <form onSubmit={handleSubmit} className='form'>
           <div className="upload-section">
             <div 
@@ -674,10 +676,7 @@ function App() {
                 <span className="results-folder-icon">📦</span>
               </div>
               <div className="results-header-buttons">
-                <button className="export-all-btn" onClick={handleExportAll} disabled={loading}>
-                  <span role="img" aria-label="box" style={{ marginRight: 6 }}>📦</span>
-                  Export all as zip
-                </button>
+                <button className="export-all-btn" onClick={handleExportAll} disabled={loading}>Export all as zip</button>
                 <button className="results-header-btn regen-btn" style={{ width: 'auto', padding: '12px 28px', fontSize: '1.05rem' }} onClick={() => setSelectMode(sm => !sm)} type="button">
                   {selectMode ? 'Cancel Selection' : 'Select to Regenerate'}
                 </button>
@@ -703,15 +702,15 @@ function App() {
                       />
                     )}
                     {regenerating.includes(idx) && (
-                      <div className="regenerating-overlay">
-                        <div className="regenerating-spinner"></div>
+                      <div className="image-loading-overlay">
+                        <div className="spinner" />
                       </div>
                     )}
                     <LazyImage
                       src={url}
                       alt={`Generated ${idx + 1}`}
                       className="clickable-image"
-                      onClick={selectMode ? undefined : () => handleImageClick(url, prompts[idx])}
+                      onClick={selectMode ? undefined : () => handleImageClick(idx)}
                     />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
@@ -734,7 +733,7 @@ function App() {
               ))}
             </div>
             {selectMode && selectedForRegen.length > 0 && (
-              <button className="generate-button" style={{ width: 'auto', padding: '12px 28px', fontSize: '1.05rem', background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)' }} onClick={handleRegenerateSelected} type="button">
+              <button className="regenerate-selected-btn" onClick={handleRegenerateSelected} type="button">
                 Regenerate Selected
               </button>
             )}

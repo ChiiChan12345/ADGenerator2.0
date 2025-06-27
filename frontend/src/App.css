@@ -626,9 +626,9 @@ body::before {
 }
 
 .export-all-btn {
-  background: linear-gradient(90deg, #f7971e 0%, #ffd200 100%);
-  color: #222;
-  font-weight: 500;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  font-weight: 600;
   border-radius: 10px;
   min-width: 140px;
   height: 40px;
@@ -1218,5 +1218,55 @@ body::before {
 }
 
 .main-title {
-  margin-top: 18px;
+  margin-top: 8px;
+}
+
+.form-section.compact {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.regenerate-selected-btn {
+  background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 10px;
+  min-width: 140px;
+  height: 40px;
+  font-size: 1.05rem;
+  border: none;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 18px;
+  padding-right: 18px;
+  margin: 0 auto 18px auto;
+  transition: background 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.image-loading-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.45);
+  z-index: 2;
+  border-radius: 12px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 4px solid #eee;
+  border-top: 4px solid #28a745;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
