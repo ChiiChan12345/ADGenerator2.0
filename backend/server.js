@@ -1,6 +1,16 @@
-// Main Express server for ADGenerator2.0
+console.log('--- Starting ADGenerator2.0 backend/server.js ---');
+
+process.on('uncaughtException', err => {
+  console.error('Uncaught Exception:', err);
+});
+process.on('unhandledRejection', err => {
+  console.error('Unhandled Rejection:', err);
+});
+
 require('dotenv').config();
+console.log('Loaded environment variables');
 const express = require('express');
+console.log('Imported express');
 const path = require('path');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -9,8 +19,10 @@ const compression = require('compression');
 const slowDown = require('express-slow-down');
 const logger = require('./utils/logger');
 const constants = require('./config/constants');
+console.log('Imported all dependencies');
 
 const app = express();
+console.log('Initialized Express app');
 const PORT = process.env.PORT || 3000;
 
 // Rate limiting configuration
@@ -127,8 +139,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server only if not in test environment
+// Place a log before app.listen
 if (process.env.NODE_ENV !== 'test') {
+  console.log('About to call app.listen...');
   app.listen(PORT, '0.0.0.0', () => {
     logger.info(`Server running on port ${PORT}`);
     logger.info('CORS enabled for:', corsOptions.origin);
