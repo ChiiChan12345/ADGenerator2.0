@@ -52,8 +52,8 @@ const handleMulterError = (err, req, res, next) => {
 // Validation middleware for prompt
 const validatePrompt = [
   body('prompt')
-    .isLength({ min: 10, max: 2000 })
-    .withMessage('Prompt must be between 10 and 2000 characters')
+    .isLength({ min: 10, max: 10000 })
+    .withMessage('Prompt must be between 10 and 10000 characters')
     .escape(),
   (req, res, next) => {
     const errors = validationResult(req);

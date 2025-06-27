@@ -74,7 +74,7 @@ function App() {
     setLoading(true);
     const formData = new FormData();
     let promptString = `Vertical: ${vertical} | Age Group: ${ageGroup} | Sentiment: ${sentiment} | Angle: ${angle}`;
-    promptString += ` | ${promptGuide}`;
+    // promptString += ` | ${promptGuide}`; // Commented out due to character limit
 
     // Add images to formData
     images.forEach(image => {
