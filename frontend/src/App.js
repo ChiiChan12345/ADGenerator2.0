@@ -439,7 +439,7 @@ function App() {
     <div className='container'>
       {/* Form Section - 20% */}
       <div className="form-section">
-        <h1>ADGenerator2.0</h1>
+        <h1 className="main-title" style={{ marginTop: '18px' }}>AD Generator 2.0</h1>
         <form onSubmit={handleSubmit} className='form'>
           <div className="upload-section">
             <div 
@@ -674,7 +674,10 @@ function App() {
                 <span className="results-folder-icon">📦</span>
               </div>
               <div className="results-header-buttons">
-                <button className="results-header-btn export-btn" onClick={handleExportAll} disabled={loading}>Export all as zip</button>
+                <button className="export-all-btn" onClick={handleExportAll} disabled={loading}>
+                  <span role="img" aria-label="box" style={{ marginRight: 6 }}>📦</span>
+                  Export all as zip
+                </button>
                 <button className="results-header-btn regen-btn" style={{ width: 'auto', padding: '12px 28px', fontSize: '1.05rem' }} onClick={() => setSelectMode(sm => !sm)} type="button">
                   {selectMode ? 'Cancel Selection' : 'Select to Regenerate'}
                 </button>
@@ -730,6 +733,11 @@ function App() {
                 </div>
               ))}
             </div>
+            {selectMode && selectedForRegen.length > 0 && (
+              <button className="generate-button" style={{ width: 'auto', padding: '12px 28px', fontSize: '1.05rem', background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)' }} onClick={handleRegenerateSelected} type="button">
+                Regenerate Selected
+              </button>
+            )}
           </div>
         )}
       </div>
