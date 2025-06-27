@@ -22,7 +22,7 @@ function initializeRedis() {
       lazyConnect: true,
       keepAlive: 30000,
       connectTimeout: 10000,
-      commandTimeout: 5000
+      commandTimeout: 5000,
     });
 
     redisClient.on('connect', () => {
@@ -30,7 +30,7 @@ function initializeRedis() {
       isConnected = true;
     });
 
-    redisClient.on('error', (err) => {
+    redisClient.on('error', err => {
       logger.warn('Redis connection error, falling back to in-memory cache:', err.message);
       isConnected = false;
     });
@@ -61,7 +61,7 @@ function cleanMemoryCache() {
       cacheExpiry.delete(key);
     }
   }
-  
+
   // Limit cache size
   if (memoryCache.size > MAX_MEMORY_CACHE_SIZE) {
     const entries = Array.from(memoryCache.keys());
@@ -85,7 +85,7 @@ async function get(key) {
       const value = await redisClient.get(key);
       return value ? JSON.parse(value) : null;
     }
-    
+
     // Fallback to memory cache
     cleanMemoryCache();
     const expireTime = cacheExpiry.get(key);
@@ -94,7 +94,7 @@ async function get(key) {
       cacheExpiry.delete(key);
       return null;
     }
-    
+
     return memoryCache.get(key) || null;
   } catch (error) {
     logger.error('Cache get error:', error);
@@ -116,11 +116,11 @@ async function set(key, value, ttlSeconds = 3600) {
       await redisClient.setex(key, ttlSeconds, JSON.stringify(value));
       return true;
     }
-    
+
     // Fallback to memory cache
     cleanMemoryCache();
     memoryCache.set(key, value);
-    cacheExpiry.set(key, Date.now() + (ttlSeconds * 1000));
+    cacheExpiry.set(key, Date.now() + ttlSeconds * 1000);
     return true;
   } catch (error) {
     logger.error('Cache set error:', error);
@@ -140,7 +140,7 @@ async function del(key) {
       await redisClient.del(key);
       return true;
     }
-    
+
     // Fallback to memory cache
     memoryCache.delete(key);
     cacheExpiry.delete(key);
@@ -162,7 +162,7 @@ async function exists(key) {
     if (redisClient && isConnected) {
       return (await redisClient.exists(key)) === 1;
     }
-    
+
     // Fallback to memory cache
     cleanMemoryCache();
     const expireTime = cacheExpiry.get(key);
@@ -171,7 +171,7 @@ async function exists(key) {
       cacheExpiry.delete(key);
       return false;
     }
-    
+
     return memoryCache.has(key);
   } catch (error) {
     logger.error('Cache exists error:', error);
@@ -219,7 +219,7 @@ module.exports = {
     redis: isConnected,
     memoryCache: {
       size: memoryCache.size,
-      maxSize: MAX_MEMORY_CACHE_SIZE
-    }
-  })
-}; 
+      maxSize: MAX_MEMORY_CACHE_SIZE,
+    },
+  }),
+};

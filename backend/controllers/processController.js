@@ -18,17 +18,17 @@ async function callOpenAI(imageBuffer, imageMimetype, prompt) {
   const messages = [
     {
       role: 'system',
-      content: `You are a marketer and image analyst. You will be given an image and a prompting Guide for Ideogram. Analyze the image in detail, Look for for Call to action in the image. then generate ${constants.PROMPTS_COUNT} distinct, creative, and marketable prompts for generating new images inspired by the original. You will be given age group of viewers. prompt must be made that are more likely to convert for that age group. Each prompt should be unique, and must adhere to magic prompt guidelines. Output ONLY the ${constants.PROMPTS_COUNT} prompts as a valid JSON array, and nothing else.`
+      content: `You are a marketer and image analyst. You will be given an image and a prompting Guide for Ideogram. Analyze the image in detail, Look for for Call to action in the image. then generate ${constants.PROMPTS_COUNT} distinct, creative, and marketable prompts for generating new images inspired by the original. You will be given age group of viewers. prompt must be made that are more likely to convert for that age group. Each prompt should be unique, and must adhere to magic prompt guidelines. Output ONLY the ${constants.PROMPTS_COUNT} prompts as a valid JSON array, and nothing else.`,
     },
     {
       role: 'user',
       content: [
         { type: 'text', text: prompt },
-        { type: 'image_url', image_url: { url: `data:${imageMimetype};base64,${imageBase64}` } }
-      ]
-    }
+        { type: 'image_url', image_url: { url: `data:${imageMimetype};base64,${imageBase64}` } },
+      ],
+    },
   ];
-  
+
   try {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
@@ -39,26 +39,29 @@ async function callOpenAI(imageBuffer, imageMimetype, prompt) {
         temperature: constants.OPENAI_TEMPERATURE,
         top_p: 1,
         presence_penalty: 0,
-        frequency_penalty: 0
+        frequency_penalty: 0,
       },
       {
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
         },
-        timeout: constants.API_TIMEOUT
+        timeout: constants.API_TIMEOUT,
       }
     );
-    
+
     logger.info('OpenAI API response received');
     let rawContent = response.data.choices[0].message.content;
     logger.debug('Raw OpenAI response received', { length: rawContent.length });
-    
+
     // Remove Markdown code block if present
     if (rawContent.trim().startsWith('```')) {
-      rawContent = rawContent.replace(/^```[a-zA-Z]*\n/, '').replace(/```$/, '').trim();
+      rawContent = rawContent
+        .replace(/^```[a-zA-Z]*\n/, '')
+        .replace(/```$/, '')
+        .trim();
     }
-    
+
     let prompts;
     try {
       prompts = JSON.parse(rawContent);
@@ -69,17 +72,17 @@ async function callOpenAI(imageBuffer, imageMimetype, prompt) {
       logger.error('Failed to parse prompts from OpenAI response:', {
         error: e.message,
         rawContentLength: rawContent.length,
-        rawContentPreview: rawContent.substring(0, 200)
+        rawContentPreview: rawContent.substring(0, 200),
       });
       throw new Error('Failed to parse prompts from OpenAI response.');
     }
-    
+
     return prompts;
   } catch (error) {
     logger.error('OpenAI API error:', {
       error: error.message,
       status: error.response?.status,
-      statusText: error.response?.statusText
+      statusText: error.response?.statusText,
     });
     throw error;
   }
@@ -88,43 +91,39 @@ async function callOpenAI(imageBuffer, imageMimetype, prompt) {
 // Helper: call Ideogram Generate-V3 API for a single prompt
 async function callIdeogram(prompt) {
   logger.info('Calling Ideogram API', { promptLength: prompt.length });
-  
+
   try {
     const form = new FormData();
     form.append('prompt', prompt);
     form.append('rendering_speed', constants.IDEOGRAM_RENDERING_SPEED);
     form.append('magic_prompt', constants.IDEOGRAM_MAGIC_PROMPT);
-    
-    const response = await axios.post(
-      'https://api.ideogram.ai/v1/ideogram-v3/generate',
-      form,
-      {
-        headers: {
-          ...form.getHeaders(),
-          'Api-Key': IDEOGRAM_API_KEY,
-        },
-        maxBodyLength: Infinity,
-        timeout: constants.API_TIMEOUT
-      }
-    );
-    
-    logger.info('Ideogram API response received', { 
-      imageCount: response.data.data?.length || 0 
+
+    const response = await axios.post('https://api.ideogram.ai/v1/ideogram-v3/generate', form, {
+      headers: {
+        ...form.getHeaders(),
+        'Api-Key': IDEOGRAM_API_KEY,
+      },
+      maxBodyLength: Infinity,
+      timeout: constants.API_TIMEOUT,
     });
-    logger.debug('Ideogram API full response', { 
-      response: JSON.stringify(response.data, null, 2) 
+
+    logger.info('Ideogram API response received', {
+      imageCount: response.data.data?.length || 0,
     });
-    
+    logger.debug('Ideogram API full response', {
+      response: JSON.stringify(response.data, null, 2),
+    });
+
     const urls = (response.data.data || []).map(img => img.url);
     logger.info('Extracted image URLs', { urlCount: urls.length });
-    
+
     return urls;
   } catch (error) {
     logger.error('Ideogram API error:', {
       error: error.message,
       status: error.response?.status,
       statusText: error.response?.statusText,
-      promptLength: prompt.length
+      promptLength: prompt.length,
     });
     throw error;
   }
@@ -135,129 +134,133 @@ async function processImagesInBackground(taskId, files, prompt) {
   const startTime = Date.now();
   const results = [];
   const prompts = [];
-  
+
   try {
     progressTracker.updateProgress(taskId, {
       currentStep: 1,
-      message: 'Initializing image processing...'
+      message: 'Initializing image processing...',
     });
 
     // Process each file with progress updates
     for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
       const file = files[fileIndex];
-      
+
       try {
         progressTracker.updateProgress(taskId, {
-          currentStep: (fileIndex * (constants.PROMPTS_COUNT + 1)) + 1,
-          message: `Processing file ${fileIndex + 1}/${files.length}: ${file.originalname}`
+          currentStep: fileIndex * (constants.PROMPTS_COUNT + 1) + 1,
+          message: `Processing file ${fileIndex + 1}/${files.length}: ${file.originalname}`,
         });
-        
-        logger.info(`Processing file ${fileIndex + 1}/${files.length}`, { 
+
+        logger.info(`Processing file ${fileIndex + 1}/${files.length}`, {
           filename: file.originalname,
-          originalSize: file.size
+          originalSize: file.size,
         });
-        
+
         // Optimize image first
         progressTracker.updateProgress(taskId, {
-          message: `Optimizing image ${fileIndex + 1}...`
+          message: `Optimizing image ${fileIndex + 1}...`,
         });
-        
+
         const optimized = await optimizeImage(file.buffer, file.mimetype);
         logger.info('Image optimization result', optimized.metadata);
-        
+
         // Check cache for existing results
         const cacheKey = cache.generateImageCacheKey(optimized.buffer, prompt);
         const cachedResult = await cache.get(cacheKey);
-        
+
         if (cachedResult) {
           logger.info(`Cache hit for file ${fileIndex + 1}`, { cacheKey });
           prompts.push(...cachedResult.prompts);
           results.push(...cachedResult.results);
-          
+
           progressTracker.updateProgress(taskId, {
             currentStep: (fileIndex + 1) * (constants.PROMPTS_COUNT + 1),
-            message: `Used cached results for ${file.originalname}`
+            message: `Used cached results for ${file.originalname}`,
           });
           continue;
         }
-        
+
         // Generate prompts with OpenAI
         progressTracker.updateProgress(taskId, {
-          message: `Generating marketing prompts for ${file.originalname}...`
+          message: `Generating marketing prompts for ${file.originalname}...`,
         });
-        
+
         const filePrompts = await callOpenAI(optimized.buffer, optimized.mimetype, prompt);
         prompts.push(...filePrompts);
-        
+
         // Generate images for each prompt
         for (let promptIndex = 0; promptIndex < filePrompts.length; promptIndex++) {
           const promptText = filePrompts[promptIndex];
-          
+
           progressTracker.updateProgress(taskId, {
-            currentStep: (fileIndex * (constants.PROMPTS_COUNT + 1)) + promptIndex + 2,
-            message: `Generating image ${promptIndex + 1}/${filePrompts.length} for ${file.originalname}...`
+            currentStep: fileIndex * (constants.PROMPTS_COUNT + 1) + promptIndex + 2,
+            message: `Generating image ${promptIndex + 1}/${filePrompts.length} for ${file.originalname}...`,
           });
-          
+
           try {
-            logger.debug(`Generating image ${promptIndex + 1}/${filePrompts.length} for file ${fileIndex + 1}`);
+            logger.debug(
+              `Generating image ${promptIndex + 1}/${filePrompts.length} for file ${fileIndex + 1}`
+            );
             const imageUrls = await callIdeogram(promptText);
             results.push(...imageUrls);
           } catch (error) {
             logger.error(`Error generating image for prompt ${promptIndex + 1}:`, {
               error: error.message,
-              promptText: promptText.substring(0, 100)
+              promptText: promptText.substring(0, 100),
             });
             // Continue with other prompts
           }
         }
-        
+
         // Cache the results for future use (24 hour TTL)
-        await cache.set(cacheKey, {
-          prompts: filePrompts,
-          results: results.slice(-filePrompts.length * 2), // Rough estimate of new results
-          metadata: optimized.metadata
-        }, 24 * 3600);
-        
-        logger.info(`Completed processing file ${fileIndex + 1}`, { 
+        await cache.set(
+          cacheKey,
+          {
+            prompts: filePrompts,
+            results: results.slice(-filePrompts.length * 2), // Rough estimate of new results
+            metadata: optimized.metadata,
+          },
+          24 * 3600
+        );
+
+        logger.info(`Completed processing file ${fileIndex + 1}`, {
           generatedImages: results.length,
-          cached: true
+          cached: true,
         });
-        
       } catch (error) {
         logger.error(`Error processing file ${file.originalname}:`, {
           error: error.message,
-          stack: error.stack
+          stack: error.stack,
         });
-        
+
         progressTracker.updateProgress(taskId, {
-          message: `Error processing ${file.originalname}: ${error.message}`
+          message: `Error processing ${file.originalname}: ${error.message}`,
         });
       }
     }
 
     const processingTime = Date.now() - startTime;
-    logger.info('Image processing completed', { 
-      totalResults: results.length, 
+    logger.info('Image processing completed', {
+      totalResults: results.length,
       totalPrompts: prompts.length,
-      processingTimeMs: processingTime
+      processingTimeMs: processingTime,
     });
 
     // Complete the task
-    progressTracker.completeTask(taskId, { 
-      results, 
+    progressTracker.completeTask(taskId, {
+      results,
       prompts,
       processingTime,
-      totalImages: results.length
+      totalImages: results.length,
     });
-
   } catch (error) {
     const processingTime = Date.now() - startTime;
     logger.error('Error processing images:', {
       error: error.message,
       stack: error.stack,
-      processingTimeMs: processingTime
+      processingTimeMs: processingTime,
     });
-    
+
     progressTracker.failTask(taskId, error);
   }
 }
@@ -272,9 +275,9 @@ exports.processImage = async (req, res) => {
     }
 
     const prompt = req.body.prompt || '';
-    logger.info('Starting image processing', { 
-      fileCount: files.length, 
-      promptLength: prompt.length 
+    logger.info('Starting image processing', {
+      fileCount: files.length,
+      promptLength: prompt.length,
     });
 
     // Create progress tracking task
@@ -283,23 +286,22 @@ exports.processImage = async (req, res) => {
     progressTracker.createTask(taskId, {
       totalSteps,
       filesCount: files.length,
-      promptsPerFile: constants.PROMPTS_COUNT
+      promptsPerFile: constants.PROMPTS_COUNT,
     });
-    
+
     // Return task ID immediately so client can track progress
-    res.json({ 
+    res.json({
       taskId,
       message: 'Processing started. Use /api/progress/' + taskId + ' to track progress.',
-      estimatedTime: `${Math.ceil(totalSteps * 2)} seconds`
+      estimatedTime: `${Math.ceil(totalSteps * 2)} seconds`,
     });
-    
+
     // Continue processing in background
     processImagesInBackground(taskId, files, prompt);
-    
   } catch (error) {
     logger.error('Error starting image processing:', {
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
     res.status(500).json({ error: error.message || 'Error starting image processing.' });
   }
@@ -308,7 +310,7 @@ exports.processImage = async (req, res) => {
 // Controller: Export images as zip from URLs
 exports.exportZipFromUrls = async (req, res) => {
   const startTime = Date.now();
-  
+
   try {
     const urls = req.body.urls;
     if (!Array.isArray(urls) || urls.length === 0) {
@@ -324,9 +326,9 @@ exports.exportZipFromUrls = async (req, res) => {
     const downloadPromises = urls.map(async (url, idx) => {
       try {
         logger.debug(`Downloading image ${idx + 1}/${urls.length}`, { url });
-        const response = await axios.get(url, { 
+        const response = await axios.get(url, {
           responseType: 'arraybuffer',
-          timeout: constants.API_TIMEOUT
+          timeout: constants.API_TIMEOUT,
         });
         const ext = url.split('.').pop().split('?')[0] || 'jpg';
         folder.file(`image_${idx + 1}.${ext}`, response.data);
@@ -335,7 +337,7 @@ exports.exportZipFromUrls = async (req, res) => {
         logger.error(`Error downloading image ${idx + 1}:`, {
           error: error.message,
           url,
-          status: error.response?.status
+          status: error.response?.status,
         });
         // Continue with other images even if one fails
       }
@@ -344,18 +346,18 @@ exports.exportZipFromUrls = async (req, res) => {
     await Promise.all(downloadPromises);
     logger.info('All images downloaded, generating zip file');
 
-    const content = await zip.generateAsync({ 
+    const content = await zip.generateAsync({
       type: 'nodebuffer',
       compression: 'DEFLATE',
-      compressionOptions: { level: constants.ZIP_COMPRESSION_LEVEL }
+      compressionOptions: { level: constants.ZIP_COMPRESSION_LEVEL },
     });
 
     const processingTime = Date.now() - startTime;
-    logger.info('Zip file generated successfully', { 
+    logger.info('Zip file generated successfully', {
       sizeBytes: content.length,
-      processingTimeMs: processingTime
+      processingTimeMs: processingTime,
     });
-    
+
     res.set({
       'Content-Type': 'application/zip',
       'Content-Disposition': 'attachment; filename="ADGenerator2.0-images.zip"',
@@ -366,7 +368,7 @@ exports.exportZipFromUrls = async (req, res) => {
     logger.error('Error exporting zip:', {
       error: err.message,
       stack: err.stack,
-      processingTimeMs: processingTime
+      processingTimeMs: processingTime,
     });
     res.status(500).json({ error: 'Failed to export zip.' });
   }

@@ -16,7 +16,7 @@ async function performHealthCheck() {
     version: require('../../package.json').version,
     services: {},
     system: {},
-    errors: []
+    errors: [],
   };
 
   try {
@@ -25,37 +25,37 @@ async function performHealthCheck() {
       memory: {
         used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
         total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
-        external: Math.round(process.memoryUsage().external / 1024 / 1024)
+        external: Math.round(process.memoryUsage().external / 1024 / 1024),
       },
       cpu: process.cpuUsage(),
       nodeVersion: process.version,
-      platform: process.platform
+      platform: process.platform,
     };
 
     // Check OpenAI API
     try {
       if (process.env.OPENAI_API_KEY) {
         const openaiResponse = await axios.get('https://api.openai.com/v1/models', {
-          headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
-          timeout: 5000
+          headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+          timeout: 5000,
         });
         health.services.openai = {
           status: 'healthy',
           responseTime: Date.now() - startTime,
-          available: true
+          available: true,
         };
       } else {
         health.services.openai = {
           status: 'warning',
           message: 'API key not configured',
-          available: false
+          available: false,
         };
       }
     } catch (error) {
       health.services.openai = {
         status: 'error',
         message: error.message,
-        available: false
+        available: false,
       };
       health.errors.push(`OpenAI API: ${error.message}`);
     }
@@ -67,20 +67,20 @@ async function performHealthCheck() {
         health.services.ideogram = {
           status: 'assumed_healthy',
           message: 'API key configured',
-          available: true
+          available: true,
         };
       } else {
         health.services.ideogram = {
           status: 'warning',
           message: 'API key not configured',
-          available: false
+          available: false,
         };
       }
     } catch (error) {
       health.services.ideogram = {
         status: 'error',
         message: error.message,
-        available: false
+        available: false,
       };
       health.errors.push(`Ideogram API: ${error.message}`);
     }
@@ -92,22 +92,22 @@ async function performHealthCheck() {
         status: 'healthy',
         redis: cacheStats.redis,
         memoryCache: cacheStats.memoryCache,
-        available: true
+        available: true,
       };
     } catch (error) {
       health.services.cache = {
         status: 'error',
         message: error.message,
-        available: false
+        available: false,
       };
       health.errors.push(`Cache: ${error.message}`);
     }
 
     // Overall health determination
-    const criticalErrors = health.errors.filter(error => 
-      error.includes('OpenAI') || error.includes('Ideogram')
+    const criticalErrors = health.errors.filter(
+      error => error.includes('OpenAI') || error.includes('Ideogram')
     );
-    
+
     if (criticalErrors.length > 0) {
       health.status = 'degraded';
     } else if (health.errors.length > 0) {
@@ -115,7 +115,7 @@ async function performHealthCheck() {
     }
 
     health.responseTime = Date.now() - startTime;
-    
+
     return health;
   } catch (error) {
     logger.error('Health check failed:', error);
@@ -123,7 +123,7 @@ async function performHealthCheck() {
       status: 'error',
       timestamp: new Date().toISOString(),
       message: error.message,
-      responseTime: Date.now() - startTime
+      responseTime: Date.now() - startTime,
     };
   }
 }
@@ -135,7 +135,7 @@ async function runCliHealthCheck() {
   try {
     const health = await performHealthCheck();
     console.log(JSON.stringify(health, null, 2));
-    
+
     // Exit with appropriate code
     if (health.status === 'healthy') {
       process.exit(0);
@@ -157,5 +157,5 @@ if (require.main === module) {
 
 module.exports = {
   performHealthCheck,
-  runCliHealthCheck
-}; 
+  runCliHealthCheck,
+};

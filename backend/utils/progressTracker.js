@@ -24,12 +24,12 @@ class ProgressTracker extends EventEmitter {
       message: 'Task started',
       startTime: Date.now(),
       metadata: metadata,
-      steps: []
+      steps: [],
     };
 
     this.tasks.set(taskId, task);
     this.emitProgress(taskId);
-    
+
     logger.info('Progress task created', { taskId, metadata });
     return task;
   }
@@ -49,7 +49,7 @@ class ProgressTracker extends EventEmitter {
     // Update task properties
     Object.assign(task, {
       ...update,
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
     });
 
     // Calculate progress percentage
@@ -63,13 +63,13 @@ class ProgressTracker extends EventEmitter {
         timestamp: Date.now(),
         message: update.message,
         step: task.currentStep,
-        data: update.data
+        data: update.data,
       });
     }
 
     this.tasks.set(taskId, task);
     this.emitProgress(taskId);
-    
+
     logger.debug('Progress updated', { taskId, progress: task.progress, message: update.message });
   }
 
@@ -94,11 +94,11 @@ class ProgressTracker extends EventEmitter {
 
     this.tasks.set(taskId, task);
     this.emitProgress(taskId);
-    
-    logger.info('Progress task completed', { 
-      taskId, 
+
+    logger.info('Progress task completed', {
+      taskId,
       duration: task.duration,
-      totalSteps: task.steps.length 
+      totalSteps: task.steps.length,
     });
 
     // Clean up task after delay
@@ -123,13 +123,13 @@ class ProgressTracker extends EventEmitter {
     task.duration = task.endTime - task.startTime;
     task.error = {
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
     };
     task.message = `Task failed: ${error.message}`;
 
     this.tasks.set(taskId, task);
     this.emitProgress(taskId);
-    
+
     logger.error('Progress task failed', { taskId, error: error.message });
 
     // Clean up task after delay
@@ -189,9 +189,9 @@ class ProgressTracker extends EventEmitter {
     if (!this.connections.has(taskId)) {
       this.connections.set(taskId, []);
     }
-    
+
     this.connections.get(taskId).push(res);
-    
+
     // Send current task state immediately
     const task = this.getTask(taskId);
     if (task) {
@@ -214,16 +214,16 @@ class ProgressTracker extends EventEmitter {
   removeConnection(taskId, res) {
     const connections = this.connections.get(taskId) || [];
     const index = connections.indexOf(res);
-    
+
     if (index > -1) {
       connections.splice(index, 1);
-      
+
       if (connections.length === 0) {
         this.connections.delete(taskId);
       } else {
         this.connections.set(taskId, connections);
       }
-      
+
       logger.debug('SSE connection removed', { taskId });
     }
   }
@@ -247,7 +247,7 @@ class ProgressTracker extends EventEmitter {
       if (
         (task.status === 'completed' || task.status === 'failed') &&
         task.endTime &&
-        (now - task.endTime) > maxAge
+        now - task.endTime > maxAge
       ) {
         this.tasks.delete(taskId);
         this.connections.delete(taskId);
@@ -265,4 +265,4 @@ setInterval(() => {
   progressTracker.cleanup();
 }, 300000);
 
-module.exports = progressTracker; 
+module.exports = progressTracker;

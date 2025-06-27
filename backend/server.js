@@ -19,7 +19,7 @@ const apiLimiter = rateLimit({
   max: constants.RATE_LIMIT_MAX_REQUESTS,
   message: {
     error: 'Too many API requests from this IP, please try again later.',
-    retryAfter: Math.ceil(constants.RATE_LIMIT_WINDOW / 1000 / 60) // minutes
+    retryAfter: Math.ceil(constants.RATE_LIMIT_WINDOW / 1000 / 60), // minutes
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -31,7 +31,7 @@ const speedLimiter = slowDown({
   delayAfter: 5, // Allow 5 requests per windowMs without delay
   delayMs: () => 500, // Add 500ms delay per request after delayAfter
   maxDelayMs: 20000, // Maximum delay of 20 seconds
-  validate: { delayMs: false } // Disable deprecation warning
+  validate: { delayMs: false }, // Disable deprecation warning
 });
 
 // Security headers configuration
@@ -41,8 +41,8 @@ const helmetConfig = {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://api.openai.com", "https://api.ideogram.ai"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'https://api.openai.com', 'https://api.ideogram.ai'],
     },
   },
   crossOriginEmbedderPolicy: false, // Disable for compatibility
@@ -54,7 +54,7 @@ const corsOptions = {
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
   credentials: true,
-  maxAge: 86400 // 24 hours
+  maxAge: 86400, // 24 hours
 };
 
 // Security middleware
@@ -84,15 +84,19 @@ const { performHealthCheck } = require('./utils/health-check');
 app.get('/health', async (req, res) => {
   try {
     const health = await performHealthCheck();
-    const statusCode = health.status === 'healthy' ? 200 : 
-                      health.status === 'warning' || health.status === 'degraded' ? 503 : 500;
+    const statusCode =
+      health.status === 'healthy'
+        ? 200
+        : health.status === 'warning' || health.status === 'degraded'
+          ? 503
+          : 500;
     res.status(statusCode).json(health);
   } catch (error) {
     logger.error('Health check endpoint error:', error);
-    res.status(500).json({ 
-      status: 'error', 
+    res.status(500).json({
+      status: 'error',
       message: 'Health check failed',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -114,12 +118,12 @@ app.use((err, req, res, next) => {
     stack: err.stack,
     url: req.url,
     method: req.method,
-    ip: req.ip
+    ip: req.ip,
   });
-  
+
   res.status(err.status || 500).json({
     error: err.message || 'Internal server error.',
-    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined,
   });
 });
 
@@ -132,4 +136,4 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Export app for testing
-module.exports = app; 
+module.exports = app;

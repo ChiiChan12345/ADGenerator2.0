@@ -1,4 +1,10 @@
-const sharp = require('sharp');
+let sharp;
+try {
+  sharp = require('sharp');
+} catch (error) {
+  console.warn('Sharp not available, image optimization disabled:', error.message);
+  sharp = null;
+}
 const logger = require('./logger');
 const constants = require('../config/constants');
 
@@ -10,7 +16,20 @@ const constants = require('../config/constants');
  */
 async function optimizeImage(imageBuffer, mimetype) {
   const startTime = Date.now();
-  
+
+  // If Sharp is not available, return original buffer
+  if (!sharp) {
+    logger.warn('Sharp not available, skipping image optimization');
+    return {
+      buffer: imageBuffer,
+      mimetype,
+      metadata: {
+        error: 'Sharp not available, using original',
+        processingTime: Date.now() - startTime,
+      },
+    };
+  }
+
   try {
     // Get original image metadata
     const originalMetadata = await sharp(imageBuffer).metadata();
@@ -18,7 +37,7 @@ async function optimizeImage(imageBuffer, mimetype) {
       width: originalMetadata.width,
       height: originalMetadata.height,
       format: originalMetadata.format,
-      size: originalMetadata.size
+      size: originalMetadata.size,
     });
 
     // Define optimization settings
@@ -27,11 +46,10 @@ async function optimizeImage(imageBuffer, mimetype) {
     const quality = 85;
 
     // Create sharp instance with optimization
-    let sharpInstance = sharp(imageBuffer)
-      .resize(maxWidth, maxHeight, {
-        fit: 'inside',
-        withoutEnlargement: true
-      });
+    let sharpInstance = sharp(imageBuffer).resize(maxWidth, maxHeight, {
+      fit: 'inside',
+      withoutEnlargement: true,
+    });
 
     // Apply format-specific optimizations
     let outputBuffer;
@@ -41,10 +59,10 @@ async function optimizeImage(imageBuffer, mimetype) {
       // For PNG, try to convert to JPEG if no transparency
       if (!originalMetadata.hasAlpha) {
         outputBuffer = await sharpInstance
-          .jpeg({ 
+          .jpeg({
             quality,
             progressive: true,
-            mozjpeg: true
+            mozjpeg: true,
           })
           .toBuffer();
       } else {
@@ -53,7 +71,7 @@ async function optimizeImage(imageBuffer, mimetype) {
           .png({
             quality,
             compressionLevel: 6,
-            adaptiveFiltering: false
+            adaptiveFiltering: false,
           })
           .toBuffer();
         outputMimetype = 'image/png';
@@ -62,17 +80,17 @@ async function optimizeImage(imageBuffer, mimetype) {
       outputBuffer = await sharpInstance
         .webp({
           quality,
-          effort: 4
+          effort: 4,
         })
         .toBuffer();
       outputMimetype = 'image/webp';
     } else {
       // Default to JPEG
       outputBuffer = await sharpInstance
-        .jpeg({ 
+        .jpeg({
           quality,
           progressive: true,
-          mozjpeg: true
+          mozjpeg: true,
         })
         .toBuffer();
     }
@@ -80,14 +98,17 @@ async function optimizeImage(imageBuffer, mimetype) {
     // Get optimized metadata
     const optimizedMetadata = await sharp(outputBuffer).metadata();
     const processingTime = Date.now() - startTime;
-    const compressionRatio = ((originalMetadata.size - optimizedMetadata.size) / originalMetadata.size * 100).toFixed(1);
+    const compressionRatio = (
+      ((originalMetadata.size - optimizedMetadata.size) / originalMetadata.size) *
+      100
+    ).toFixed(1);
 
     logger.info('Image optimization completed', {
       originalSize: originalMetadata.size,
       optimizedSize: optimizedMetadata.size,
       compressionRatio: `${compressionRatio}%`,
       processingTimeMs: processingTime,
-      dimensions: `${optimizedMetadata.width}x${optimizedMetadata.height}`
+      dimensions: `${optimizedMetadata.width}x${optimizedMetadata.height}`,
     });
 
     return {
@@ -97,26 +118,25 @@ async function optimizeImage(imageBuffer, mimetype) {
         original: originalMetadata,
         optimized: optimizedMetadata,
         compressionRatio,
-        processingTime
-      }
+        processingTime,
+      },
     };
-
   } catch (error) {
     const processingTime = Date.now() - startTime;
     logger.error('Image optimization failed:', {
       error: error.message,
       processingTimeMs: processingTime,
-      originalMimetype: mimetype
+      originalMimetype: mimetype,
     });
-    
+
     // Return original buffer if optimization fails
     return {
       buffer: imageBuffer,
       mimetype,
       metadata: {
         error: 'Optimization failed, using original',
-        processingTime
-      }
+        processingTime,
+      },
     };
   }
 }
@@ -127,11 +147,17 @@ async function optimizeImage(imageBuffer, mimetype) {
  * @returns {Promise<Buffer>}
  */
 async function generateThumbnail(imageBuffer) {
+  // If Sharp is not available, return null
+  if (!sharp) {
+    logger.warn('Sharp not available, skipping thumbnail generation');
+    return null;
+  }
+
   try {
     return await sharp(imageBuffer)
       .resize(200, 200, {
         fit: 'cover',
-        position: 'center'
+        position: 'center',
       })
       .jpeg({ quality: 70 })
       .toBuffer();
@@ -143,5 +169,5 @@ async function generateThumbnail(imageBuffer) {
 
 module.exports = {
   optimizeImage,
-  generateThumbnail
-}; 
+  generateThumbnail,
+};

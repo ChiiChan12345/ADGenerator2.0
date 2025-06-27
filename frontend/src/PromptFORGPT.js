@@ -219,4 +219,4 @@ A modern and stylish logo for "Mocha Comfort" features a steaming coffee cup wit
 A cozy and inviting logo for "Mocha Comfort" coffee shop, featuring a steaming hot mocha with a whipped cream topping and a cherry on top. The coffee cup is adorned with a comfortable, plush heart, symbolizing love and warmth. The overall design is in a modern, minimalistic style, with a subtle, earthy color palette.
 `;
 
-export default promptGuide; 
+export default promptGuide;

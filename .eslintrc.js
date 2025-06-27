@@ -4,20 +4,18 @@ module.exports = {
     commonjs: true,
     es2021: true,
     node: true,
-    jest: true
+    jest: true,
   },
-  extends: [
-    'eslint:recommended'
-  ],
+  extends: ['eslint:recommended'],
   parserOptions: {
     ecmaVersion: 12,
-    sourceType: 'module'
+    sourceType: 'module',
   },
   rules: {
-    'indent': ['error', 2],
+    indent: ['error', 2],
     'linebreak-style': ['error', 'unix'],
-    'quotes': ['error', 'single'],
-    'semi': ['error', 'always'],
+    quotes: ['error', 'single'],
+    semi: ['error', 'always'],
     'no-unused-vars': ['warn'],
     'no-console': ['warn'],
     'prefer-const': ['error'],
@@ -28,12 +26,7 @@ module.exports = {
     'prefer-arrow-callback': ['error'],
     'arrow-spacing': ['error'],
     'no-multiple-empty-lines': ['error', { max: 2 }],
-    'eol-last': ['error', 'always']
+    'eol-last': ['error', 'always'],
   },
-  ignorePatterns: [
-    'node_modules/',
-    'frontend/build/',
-    'backend/logs/',
-    '*.min.js'
-  ]
-}; 
+  ignorePatterns: ['node_modules/', 'frontend/build/', 'backend/logs/', '*.min.js'],
+};
