@@ -30,8 +30,6 @@ function App() {
   ];
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [generatedImages, setGeneratedImages] = useState([]);
-  const [isExporting, setIsExporting] = useState(false);
   const [results, setResults] = useState([]);
   const [prompts, setPrompts] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -100,7 +98,6 @@ function App() {
       if (data.results && Array.isArray(data.results)) {
         setResults(data.results);
         setPrompts(data.prompts || []);
-        setGeneratedImages(data.results);
       } else {
         throw new Error('Invalid response format from server');
       }

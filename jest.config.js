@@ -1,0 +1,27 @@
+module.exports = {
+  testEnvironment: 'node',
+  roots: ['<rootDir>/backend', '<rootDir>/tests'],
+  testMatch: [
+    '**/__tests__/**/*.js',
+    '**/*.test.js'
+  ],
+  collectCoverageFrom: [
+    'backend/**/*.js',
+    '!backend/logs/**',
+    '!backend/node_modules/**',
+    '!**/node_modules/**'
+  ],
+  coverageDirectory: 'coverage',
+  coverageReporters: [
+    'text',
+    'lcov',
+    'html'
+  ],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
+  testTimeout: 30000,
+  verbose: true,
+  forceExit: true,
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true
+}; 
