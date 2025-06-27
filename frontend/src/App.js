@@ -6,9 +6,7 @@ import { saveAs } from 'file-saver';
 
 function App() {
   const [images, setImages] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
   const [vertical, setVertical] = useState('');
-  const [ageGroup, setAgeGroup] = useState('');
   const [angle, setAngle] = useState('');
   const [sentiment, setSentiment] = useState('');
   const [numImages, setNumImages] = useState(4);
@@ -54,6 +52,12 @@ function App() {
     'Creating Images',
     'Finalizing Results'
   ];
+
+  const [ageFrom, setAgeFrom] = useState(18);
+  const [ageTo, setAgeTo] = useState(65);
+
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedForRegen, setSelectedForRegen] = useState([]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -102,20 +106,9 @@ function App() {
     }
   }, []);
 
-  // Create image previews
-  const createImagePreviews = (files) => {
-    const previews = files.map(file => ({
-      file,
-      url: URL.createObjectURL(file),
-      id: Math.random().toString(36).substr(2, 9)
-    }));
-    setImagePreviews(previews);
-  };
-
   // Handle file selection
   const handleFiles = (files) => {
     setImages(files);
-    createImagePreviews(files);
     setError('');
     setFieldErrors(prev => ({ ...prev, images: false }));
   };
@@ -125,10 +118,8 @@ function App() {
     handleFiles(files);
   };
 
-  const removeImage = (id) => {
-    const updatedPreviews = imagePreviews.filter(preview => preview.id !== id);
-    setImagePreviews(updatedPreviews);
-    const updatedFiles = updatedPreviews.map(preview => preview.file);
+  const removeImage = (index) => {
+    const updatedFiles = images.filter((_, i) => i !== index);
     setImages(updatedFiles);
   };
 
@@ -137,9 +128,6 @@ function App() {
     let isValid = true;
     switch (name) {
       case 'vertical':
-        isValid = value.trim().length >= 2;
-        break;
-      case 'ageGroup':
         isValid = value.trim().length >= 2;
         break;
       case 'angle':
@@ -159,13 +147,6 @@ function App() {
     const value = e.target.value;
     setVertical(value);
     validateField('vertical', value);
-    setError('');
-  };
-
-  const handleAgeGroupChange = e => {
-    const value = e.target.value;
-    setAgeGroup(value);
-    validateField('ageGroup', value);
     setError('');
   };
 
@@ -337,8 +318,8 @@ function App() {
       setError('Please upload at least one image.');
       return;
     }
-    if (!vertical.trim() || !ageGroup.trim() || !sentiment.trim() || !angle.trim()) {
-      setError('Please enter vertical, age group, sentiment, and angle.');
+    if (!vertical.trim() || !sentiment.trim() || !angle.trim()) {
+      setError('Please enter vertical, sentiment, and angle.');
       return;
     }
     
@@ -346,7 +327,7 @@ function App() {
     simulateProgress();
     
     const formData = new FormData();
-    let promptString = `Vertical: ${vertical} | Age Group: ${ageGroup} | Sentiment: ${sentiment} | Angle: ${angle}`;
+    let promptString = `Vertical: ${vertical} | Sentiment: ${sentiment} | Angle: ${angle}`;
     // promptString += ` | ${promptGuide}`; // Commented out due to character limit
 
     // Add images to formData
@@ -355,6 +336,7 @@ function App() {
     });
 
     formData.append('prompt', promptString);
+    formData.append('numImages', numImages);
 
     try {
       const response = await fetch('/api/process', {
@@ -369,8 +351,8 @@ function App() {
 
       const data = await response.json();
       if (data.results && Array.isArray(data.results)) {
-        setResults(data.results);
-        setPrompts(data.prompts || []);
+        setResults(data.results.slice(0, numImages));
+        setPrompts((data.prompts || []).slice(0, numImages));
         
         // Complete progress
         setTimeout(() => {
@@ -431,6 +413,17 @@ function App() {
     return null; // Hide all tooltips
   };
 
+  const toggleSelect = idx => {
+    setSelectedForRegen(sel => sel.includes(idx) ? sel.filter(i => i !== idx) : [...sel, idx]);
+  };
+
+  const handleRegenerateSelected = () => {
+    // Implement regeneration logic for selected images
+    // For now, just clear selection and exit select mode
+    setSelectedForRegen([]);
+    setSelectMode(false);
+  };
+
   return (
     <div className='container'>
       {/* Form Section - 20% */}
@@ -468,24 +461,20 @@ function App() {
               )}
             </div>
 
-            {(imagePreviews.length > 0 || images.length > 0) && (
+            {images.length > 0 && (
               <>
                 <div className="image-preview-container">
-                  {(imagePreviews.length > 0 ? imagePreviews : images.map((file, index) => ({
-                    file,
-                    url: URL.createObjectURL(file),
-                    id: index
-                  }))).map((preview, index) => (
-                    <div key={preview.id || index} className="image-preview">
+                  {images.map((file, index) => (
+                    <div key={index} className="image-preview">
                       <img 
-                        src={preview.url} 
+                        src={URL.createObjectURL(file)} 
                         alt={`Preview ${index + 1}`}
                       />
                       <button
                         className="image-preview-remove"
                         onClick={(e) => {
                           e.stopPropagation();
-                          removeImage(preview.id || index);
+                          removeImage(index);
                         }}
                         title="Remove image"
                       >
@@ -495,7 +484,7 @@ function App() {
                   ))}
                 </div>
                 <div className="file-info">
-                  ✓ {(imagePreviews.length > 0 ? imagePreviews.length : images.length)} image{(imagePreviews.length > 0 ? imagePreviews.length : images.length) !== 1 ? 's' : ''} selected
+                  ✓ {images.length} image{images.length !== 1 ? 's' : ''} selected
                 </div>
               </>
             )}
@@ -560,30 +549,21 @@ function App() {
             )}
           </div>
 
-          <div className={`form-group ${fieldErrors.ageGroup ? 'has-error' : ageGroup ? 'has-success' : ''}`}>
-            <label>
-              Age Group
-            </label>
-            <input
-              type="text"
-              value={ageGroup}
-              onChange={handleAgeGroupChange}
-              placeholder="Enter age group (e.g., 25-35)"
-              required
-            />
-            {fieldErrors.ageGroup && (
-              <div className="field-hint error">Please enter at least 2 characters</div>
-            )}
-            {ageGroup && !fieldErrors.ageGroup && (
-              <div className="field-hint success">✓ Target age group specified</div>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label>
-              Number of Images to Generate
-            </label>
-            <div className="number-input-group">
+          <div className="form-group form-row">
+            <label style={{ width: '100%' }}>Age Range & Number of Images</label>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <select value={ageFrom} onChange={e => setAgeFrom(Number(e.target.value))} style={{ width: 60 }}>
+                {[...Array(48)].map((_, i) => (
+                  <option key={i} value={i + 18}>{i + 18}</option>
+                ))}
+              </select>
+              <span style={{ fontWeight: 600, color: '#667eea' }}>to</span>
+              <select value={ageTo} onChange={e => setAgeTo(Number(e.target.value))} style={{ width: 60 }}>
+                {[...Array(48)].map((_, i) => (
+                  <option key={i} value={i + 18}>{i + 18}</option>
+                ))}
+              </select>
+              <span style={{ marginLeft: 10, fontWeight: 600 }}>Images:</span>
               <input
                 type="number"
                 className="number-input"
@@ -592,10 +572,8 @@ function App() {
                 min="1"
                 max="10"
                 required
+                style={{ width: 60 }}
               />
-              <span className="number-label">
-                {numImages === 1 ? 'image' : 'images'}
-              </span>
             </div>
           </div>
 
@@ -682,17 +660,28 @@ function App() {
         {/* Results */}
         {results.length > 0 && !loading && (
           <div className='results'>
-            <h2>Generated Images</h2>
-            <button
-              className='export-all-btn'
-              onClick={handleExportAll}
-              disabled={loading}
-            >
-              📦 Export All as ZIP
-            </button>
+            <div className="results-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
+              <button className="export-all-btn" onClick={handleExportAll} disabled={loading}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ marginRight: 6 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
+                Export all as zip
+              </button>
+              <button className="generate-button" style={{ width: 'auto', padding: '8px 18px' }} onClick={() => setSelectMode(sm => !sm)} type="button">
+                {selectMode ? 'Cancel Selection' : 'Select to Regenerate'}
+              </button>
+              {selectMode && selectedForRegen.length > 0 && (
+                <button className="generate-button" style={{ width: 'auto', padding: '8px 18px', background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)' }} onClick={handleRegenerateSelected} type="button">
+                  Regenerate Selected
+                </button>
+              )}
+            </div>
             <div className='images'>
               {results.map((url, idx) => (
-                <div key={url} className='image-block'>
+                <div
+                  key={idx}
+                  className={`image-card${selectMode ? ' selectable' : ''}${selectedForRegen.includes(idx) ? ' selected' : ''}`}
+                  onClick={selectMode ? () => toggleSelect(idx) : undefined}
+                  style={selectMode ? { cursor: 'pointer', border: selectedForRegen.includes(idx) ? '2px solid #667eea' : '2px solid transparent' } : {}}
+                >
                   <div className="image-container">
                     <LazyImage
                       src={url}
@@ -703,23 +692,16 @@ function App() {
                   </div>
                   <a
                     href={url}
-                    download={`generated-image-${idx + 1}.jpg`}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='download-btn'
+                    download
+                    className="download-image-btn"
+                    title="Download image"
                   >
-                    ⬇️ Download Image
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
+                    Download
                   </a>
                   {prompts[idx] && (
-                    <div 
-                      className='prompt-caption'
-                      onClick={() => copyPromptToClipboard(prompts[idx], idx)}
-                      title="Click to copy prompt"
-                    >
+                    <div className="prompt-text">
                       {prompts[idx]}
-                      <div className={`copy-feedback ${copiedPrompts[idx] ? 'show' : ''}`}>
-                        Copied!
-                      </div>
                     </div>
                   )}
                 </div>
@@ -731,31 +713,13 @@ function App() {
 
       {/* Image Modal */}
       {selectedImage && (
-        <div className='modal-overlay' onClick={handleCloseModal}>
-          <div className='modal-content' onClick={e => e.stopPropagation()}>
-            <button className='modal-close' onClick={handleCloseModal}>
-              ×
-            </button>
-            <div className="progressive-image">
-              <div className="progressive-image-placeholder"></div>
-              <img 
-                src={selectedImage.url} 
-                alt='Enlarged view' 
-                className='modal-image loaded'
-                onLoad={(e) => e.target.parentElement.classList.add('loaded')}
-              />
-            </div>
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <img src={selectedImage.url} alt="Preview" style={{ maxWidth: '90vw', maxHeight: '80vh', borderRadius: 16 }} />
             {selectedImage.prompt && (
-              <div className='modal-prompt'>
-                {selectedImage.prompt}
-                <button
-                  className={`copy-button ${copiedPrompts['modal'] ? 'copied' : ''}`}
-                  onClick={() => copyPromptToClipboard(selectedImage.prompt, 'modal')}
-                >
-                  {copiedPrompts['modal'] ? '✓ Copied!' : 'Copy Prompt'}
-                </button>
-              </div>
+              <div className="prompt-text" style={{ marginTop: 12 }}>{selectedImage.prompt}</div>
             )}
+            <button className="generate-button" style={{ marginTop: 18 }} onClick={handleCloseModal}>Close</button>
           </div>
         </div>
       )}
