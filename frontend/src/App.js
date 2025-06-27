@@ -421,12 +421,18 @@ function App() {
   };
 
   const handleRegenerateSelected = () => {
-    setRegenerating(selectedForRegen);
+    setRegeneratingImages(selectedImages);
+    // For each selected image, generate a new prompt and update the image (simulate new image)
+    const newImages = images.map((img, idx) =>
+      selectedImages.includes(idx)
+        ? { ...img, prompt: generateNewPrompt(), url: getNewImageUrl() }
+        : img
+    );
     setTimeout(() => {
-      setRegenerating([]);
-      setSelectedForRegen([]);
-      setSelectMode(false);
-    }, 2000); // Simulate regeneration
+      setImages(newImages);
+      setRegeneratingImages([]);
+      setSelectedImages([]);
+    }, 2000);
   };
 
   return (
@@ -577,16 +583,16 @@ function App() {
               <span style={{ marginLeft: 10, fontWeight: 600 }}>Images:</span>
               <div style={{ position: 'relative', width: 80 }}>
                 <select
-                  className="number-input"
                   value={numImages}
                   onChange={e => setNumImages(Number(e.target.value))}
                   style={{ width: '100%', paddingRight: 28, backgroundPosition: 'right 8px center' }}
+                  className="custom-select"
                 >
                   {[...Array(20)].map((_, i) => (
                     <option key={i + 1} value={i + 1}>{i + 1}</option>
                   ))}
                 </select>
-                <span className="custom-select-arrow" style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>&#9662;</span>
+                <span className="custom-arrow" />
               </div>
             </div>
           </div>
@@ -663,19 +669,16 @@ function App() {
         {/* Results */}
         {results.length > 0 && !loading && (
           <div className='results'>
-            <div className="results-header" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '18px', marginBottom: '18px' }}>
-              <button className="export-all-btn small" onClick={handleExportAll} disabled={loading} style={{ marginBottom: 0, fontSize: '1rem', padding: '8px 16px' }}>
-                <span role="img" aria-label="box" style={{ marginRight: 6 }}>📦</span>
-                Export all as zip
-              </button>
-              <button className="generate-button" style={{ width: 'auto', padding: '12px 28px', fontSize: '1.05rem' }} onClick={() => setSelectMode(sm => !sm)} type="button">
-                {selectMode ? 'Cancel Selection' : 'Select to Regenerate'}
-              </button>
-              {selectMode && selectedForRegen.length > 0 && (
-                <button className="generate-button" style={{ width: 'auto', padding: '12px 28px', fontSize: '1.05rem', background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)' }} onClick={handleRegenerateSelected} type="button">
-                  Regenerate Selected
+            <div className="results-header-row">
+              <div className="results-header-folder">
+                <span className="results-folder-icon">📦</span>
+              </div>
+              <div className="results-header-buttons">
+                <button className="results-header-btn export-btn" onClick={handleExportAll} disabled={loading}>Export all as zip</button>
+                <button className="results-header-btn regen-btn" style={{ width: 'auto', padding: '12px 28px', fontSize: '1.05rem' }} onClick={() => setSelectMode(sm => !sm)} type="button">
+                  {selectMode ? 'Cancel Selection' : 'Select to Regenerate'}
                 </button>
-              )}
+              </div>
             </div>
             <div className='images'>
               {results.map((url, idx) => (
