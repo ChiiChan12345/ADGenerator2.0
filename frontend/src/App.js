@@ -11,6 +11,7 @@ function App() {
   const [ageGroup, setAgeGroup] = useState('');
   const [angle, setAngle] = useState('');
   const [sentiment, setSentiment] = useState('');
+  const [numImages, setNumImages] = useState(4);
   const [dragOver, setDragOver] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [copiedPrompts, setCopiedPrompts] = useState({});
@@ -175,6 +176,14 @@ function App() {
     setSentiment(value);
     validateField('sentiment', value);
     setError('');
+  };
+
+  // Handle number of images change
+  const handleNumImagesChange = e => {
+    const value = parseInt(e.target.value);
+    if (value >= 1 && value <= 10) {
+      setNumImages(value);
+    }
   };
 
   // Copy to clipboard functionality
@@ -415,270 +424,296 @@ function App() {
 
   return (
     <div className='container'>
-      <h1>ADGenerator2.0 Internal Image Generator</h1>
-      <form onSubmit={handleSubmit} className='form'>
-        <div className='upload-section'>
-          <div 
-            className={`upload-box ${dragOver ? 'drag-over' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <h3>Upload Images</h3>
-            <div className="upload-instructions">
-              <strong>Choose files</strong> or <strong>drag and drop</strong>
-              <br />
-              Supports: JPG, PNG, GIF, WebP
+      {/* Form Section - 20% */}
+      <div className="form-section">
+        <h1>ADGenerator2.0</h1>
+        <form onSubmit={handleSubmit} className='form'>
+          <div className='upload-section'>
+            <div 
+              className={`upload-box ${dragOver ? 'drag-over' : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <h3>Upload Images</h3>
+              <div className="upload-instructions">
+                <strong>Choose files</strong> or <strong>drag and drop</strong>
+                <br />
+                Supports: JPG, PNG, GIF, WebP
+              </div>
+              <div className="drag-indicator">Drop images here</div>
+              <input
+                ref={fileInputRef}
+                type='file'
+                accept='image/*'
+                multiple
+                onChange={handleImageChange}
+                className='file-input'
+              />
+              {imagePreviews.length > 0 && (
+                <div className="image-preview-container">
+                  {imagePreviews.map(preview => (
+                    <div key={preview.id} className="image-preview">
+                      <img src={preview.url} alt="Preview" />
+                      <button 
+                        type="button"
+                        className="image-preview-remove"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage(preview.id);
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {images.length > 0 && <p className='file-info'>{images.length} image(s) selected</p>}
             </div>
-            <div className="drag-indicator">Drop images here</div>
+          </div>
+
+          <div className={`form-group ${fieldErrors.vertical ? 'has-error' : vertical ? 'has-success' : ''}`}>
+            <Tooltip 
+              text="Specify the business vertical or industry (e.g., 'Health & Wellness', 'Technology', 'Fashion')"
+            >
+              <label htmlFor='vertical'>Vertical:</label>
+            </Tooltip>
             <input
-              ref={fileInputRef}
-              type='file'
-              accept='image/*'
-              multiple
-              onChange={handleImageChange}
-              className='file-input'
+              type='text'
+              id='vertical'
+              value={vertical}
+              onChange={handleVerticalChange}
+              placeholder='Enter vertical (e.g., Health & Wellness)'
+              required
             />
-            {imagePreviews.length > 0 && (
-              <div className="image-preview-container">
-                {imagePreviews.map(preview => (
-                  <div key={preview.id} className="image-preview">
-                    <img src={preview.url} alt="Preview" />
-                    <button 
-                      type="button"
-                      className="image-preview-remove"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeImage(preview.id);
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
+            {fieldErrors.vertical && (
+              <div className="field-hint error">Please enter at least 2 characters</div>
             )}
-            {images.length > 0 && <p className='file-info'>{images.length} image(s) selected</p>}
+            {vertical && !fieldErrors.vertical && (
+              <div className="field-hint success">✓ Valid vertical specified</div>
+            )}
           </div>
-        </div>
 
-        <div className={`form-group ${fieldErrors.vertical ? 'has-error' : vertical ? 'has-success' : ''}`}>
-          <Tooltip 
-            text="Specify the business vertical or industry (e.g., 'Health & Wellness', 'Technology', 'Fashion')"
-          >
-            <label htmlFor='vertical'>Vertical:</label>
-          </Tooltip>
-          <input
-            type='text'
-            id='vertical'
-            value={vertical}
-            onChange={handleVerticalChange}
-            placeholder='Enter vertical (e.g., Health & Wellness)'
-            required
-          />
-          {fieldErrors.vertical && (
-            <div className="field-hint error">Please enter at least 2 characters</div>
-          )}
-          {vertical && !fieldErrors.vertical && (
-            <div className="field-hint success">✓ Valid vertical specified</div>
-          )}
-        </div>
-
-        <div className={`form-group ${fieldErrors.angle ? 'has-error' : angle ? 'has-success' : ''}`}>
-          <Tooltip 
-            text="Describe the unique angle or perspective for the ad (e.g., 'Before/After transformation', 'Problem-solution approach')"
-          >
-            <label htmlFor='angle'>Angle:</label>
-          </Tooltip>
-          <input
-            type='text'
-            id='angle'
-            value={angle}
-            onChange={handleAngleChange}
-            placeholder='Enter creative angle (e.g., Problem-solution approach)'
-            required
-          />
-          {fieldErrors.angle && (
-            <div className="field-hint error">Please enter at least 5 characters</div>
-          )}
-          {angle && !fieldErrors.angle && (
-            <div className="field-hint success">✓ Good angle description</div>
-          )}
-        </div>
-
-        <div className={`form-group ${fieldErrors.sentiment ? 'has-error' : sentiment ? 'has-success' : ''}`}>
-          <Tooltip 
-            text="Choose the emotional tone and style for your ad copy and imagery"
-          >
-            <label htmlFor='sentiment'>Sentiment:</label>
-          </Tooltip>
-          <select
-            id='sentiment'
-            value={sentiment}
-            onChange={handleSentimentChange}
-            className='sentiment-select'
-            required
-          >
-            <option value=''>Select a sentiment...</option>
-            {sentimentOptions.map(option => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          {sentiment && (
-            <div className="field-hint success">✓ Sentiment selected</div>
-          )}
-        </div>
-
-        <div className={`form-group ${fieldErrors.ageGroup ? 'has-error' : ageGroup ? 'has-success' : ''}`}>
-          <Tooltip 
-            text="Target age demographic for the ad (e.g., '25-35', '18-24', '35-50')"
-          >
-            <label htmlFor='ageGroup'>Age Group:</label>
-          </Tooltip>
-          <input
-            type='text'
-            id='ageGroup'
-            value={ageGroup}
-            onChange={handleAgeGroupChange}
-            placeholder='Enter age group (e.g., 25-35)'
-            required
-          />
-          {fieldErrors.ageGroup && (
-            <div className="field-hint error">Please enter at least 2 characters</div>
-          )}
-          {ageGroup && !fieldErrors.ageGroup && (
-            <div className="field-hint success">✓ Target age group specified</div>
-          )}
-        </div>
-
-        {error && <div className='error'>{error}</div>}
-
-        <button type='submit' disabled={loading} className={`generate-button ${loading ? 'loading' : ''}`}>
-          {loading ? (
-            <span className="loading-dots">Generating</span>
-          ) : (
-            'Generate Images'
-          )}
-        </button>
-      </form>
-
-      {/* Progress Bar */}
-      <div className={`progress-container ${showProgress ? 'visible' : ''}`}>
-        <div className='progress-wrapper'>
-          <div className='progress-status'>
-            <div className='progress-spinner'></div>
-            <div className='progress-text'>{progressMessage}</div>
+          <div className={`form-group ${fieldErrors.angle ? 'has-error' : angle ? 'has-success' : ''}`}>
+            <Tooltip 
+              text="Describe the unique angle or perspective for the ad (e.g., 'Before/After transformation', 'Problem-solution approach')"
+            >
+              <label htmlFor='angle'>Angle:</label>
+            </Tooltip>
+            <input
+              type='text'
+              id='angle'
+              value={angle}
+              onChange={handleAngleChange}
+              placeholder='Enter creative angle (e.g., Problem-solution approach)'
+              required
+            />
+            {fieldErrors.angle && (
+              <div className="field-hint error">Please enter at least 5 characters</div>
+            )}
+            {angle && !fieldErrors.angle && (
+              <div className="field-hint success">✓ Good angle description</div>
+            )}
           </div>
-          
-          <div className='progress-bar-container'>
-            <div className='progress-bar' style={{ width: `${progressPercent}%` }}></div>
+
+          <div className={`form-group ${fieldErrors.sentiment ? 'has-error' : sentiment ? 'has-success' : ''}`}>
+            <Tooltip 
+              text="Choose the emotional tone and style for your ad copy and imagery"
+            >
+              <label htmlFor='sentiment'>Sentiment:</label>
+            </Tooltip>
+            <select
+              id='sentiment'
+              value={sentiment}
+              onChange={handleSentimentChange}
+              className='sentiment-select'
+              required
+            >
+              <option value=''>Select a sentiment...</option>
+              {sentimentOptions.map(option => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            {sentiment && (
+              <div className="field-hint success">✓ Sentiment selected</div>
+            )}
           </div>
-          
-          <div className='progress-percentage'>{progressPercent}%</div>
-          
-          <div className='progress-steps'>
-            {progressSteps.map((step, index) => (
-              <div 
-                key={index} 
-                className={`progress-step ${
-                  index < currentStep ? 'completed' : 
-                  index === currentStep ? 'active' : ''
-                }`}
-              >
-                {step}
-              </div>
-            ))}
+
+          <div className={`form-group ${fieldErrors.ageGroup ? 'has-error' : ageGroup ? 'has-success' : ''}`}>
+            <Tooltip 
+              text="Target age demographic for the ad (e.g., '25-35', '18-24', '35-50')"
+            >
+              <label htmlFor='ageGroup'>Age Group:</label>
+            </Tooltip>
+            <input
+              type='text'
+              id='ageGroup'
+              value={ageGroup}
+              onChange={handleAgeGroupChange}
+              placeholder='Enter age group (e.g., 25-35)'
+              required
+            />
+            {fieldErrors.ageGroup && (
+              <div className="field-hint error">Please enter at least 2 characters</div>
+            )}
+            {ageGroup && !fieldErrors.ageGroup && (
+              <div className="field-hint success">✓ Target age group specified</div>
+            )}
+          </div>
+
+          <div className="form-group">
+            <Tooltip 
+              text="Choose how many images to generate (1-10). More images = more variety but longer generation time"
+            >
+              <label htmlFor='numImages'>Number of Images:</label>
+            </Tooltip>
+            <div className="number-input-group">
+              <input
+                type='number'
+                id='numImages'
+                value={numImages}
+                onChange={handleNumImagesChange}
+                min="1"
+                max="10"
+                className="number-input"
+              />
+              <span className="number-label">images to generate</span>
+            </div>
+          </div>
+
+          {error && <div className='error'>{error}</div>}
+
+          <button type='submit' disabled={loading} className={`generate-button ${loading ? 'loading' : ''}`}>
+            {loading ? (
+              <span className="loading-dots">Generating</span>
+            ) : (
+              `Generate ${numImages} Image${numImages !== 1 ? 's' : ''}`
+            )}
+          </button>
+        </form>
+
+        {/* Progress Bar in Form Section */}
+        <div className={`progress-container ${showProgress ? 'visible' : ''}`}>
+          <div className='progress-wrapper'>
+            <div className='progress-status'>
+              <div className='progress-spinner'></div>
+              <div className='progress-text'>{progressMessage}</div>
+            </div>
+            
+            <div className='progress-bar-container'>
+              <div className='progress-bar' style={{ width: `${progressPercent}%` }}></div>
+            </div>
+            
+            <div className='progress-percentage'>{progressPercent}%</div>
+            
+            <div className='progress-steps'>
+              {progressSteps.map((step, index) => (
+                <div 
+                  key={index} 
+                  className={`progress-step ${
+                    index < currentStep ? 'completed' : 
+                    index === currentStep ? 'active' : ''
+                  }`}
+                >
+                  {step}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Loading Skeletons */}
-      {loading && !results.length && (
-        <div className='results'>
-          <h2>
-            <span className="typing-indicator">Generating Images</span>
-          </h2>
-          <div className='images'>
-            {[1, 2, 3, 4].map((_, index) => (
-              <div key={index} className='loading-skeleton'>
-                <div className='skeleton-image'></div>
-                <div className='skeleton-text'></div>
-                <div className='skeleton-text short'></div>
-                <div className='skeleton-text medium'></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && results.length === 0 && images.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-state-icon"></div>
-          <h3 className="empty-state-title">Ready to Create Amazing Ads?</h3>
-          <p className="empty-state-description">
-            Upload your images and fill out the form above to generate professional marketing content with AI.
-          </p>
-          <button 
-            className="empty-state-action"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Upload Your First Image
-          </button>
-        </div>
-      )}
-
-      {/* Results */}
-      {results.length > 0 && !loading && (
-        <div className='results'>
-          <h2>Generated Images</h2>
-          <button
-            className='export-all-btn'
-            onClick={handleExportAll}
-            disabled={loading}
-          >
-            📦 Export All as ZIP
-          </button>
-          <div className='images'>
-            {results.map((url, idx) => (
-              <div key={url} className='image-block'>
-                <div className="image-container">
-                  <LazyImage
-                    src={url}
-                    alt={`Generated ${idx + 1}`}
-                    className="clickable-image"
-                    onClick={() => handleImageClick(url, prompts[idx])}
-                  />
+      {/* Results Section - 80% */}
+      <div className="results-section">
+        {/* Loading Skeletons */}
+        {loading && !results.length && (
+          <div className='results'>
+            <h2>
+              <span className="typing-indicator">Generating Images</span>
+            </h2>
+            <div className='images'>
+              {Array.from({ length: numImages }).map((_, index) => (
+                <div key={index} className='loading-skeleton'>
+                  <div className='skeleton-image'></div>
+                  <div className='skeleton-text'></div>
+                  <div className='skeleton-text short'></div>
+                  <div className='skeleton-text medium'></div>
                 </div>
-                <a
-                  href={url}
-                  download={`generated-image-${idx + 1}.jpg`}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='download-btn'
-                >
-                  ⬇️ Download Image
-                </a>
-                {prompts[idx] && (
-                  <div 
-                    className='prompt-caption'
-                    onClick={() => copyPromptToClipboard(prompts[idx], idx)}
-                    title="Click to copy prompt"
-                  >
-                    {prompts[idx]}
-                    <div className={`copy-feedback ${copiedPrompts[idx] ? 'show' : ''}`}>
-                      Copied!
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Empty State */}
+        {!loading && results.length === 0 && images.length === 0 && (
+          <div className="empty-state">
+            <div className="empty-state-icon"></div>
+            <h3 className="empty-state-title">Ready to Create Amazing Ads?</h3>
+            <p className="empty-state-description">
+              Upload your images and fill out the form to generate professional marketing content with AI.
+            </p>
+            <button 
+              className="empty-state-action"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Upload Your First Image
+            </button>
+          </div>
+        )}
+
+        {/* Results */}
+        {results.length > 0 && !loading && (
+          <div className='results'>
+            <h2>Generated Images</h2>
+            <button
+              className='export-all-btn'
+              onClick={handleExportAll}
+              disabled={loading}
+            >
+              📦 Export All as ZIP
+            </button>
+            <div className='images'>
+              {results.map((url, idx) => (
+                <div key={url} className='image-block'>
+                  <div className="image-container">
+                    <LazyImage
+                      src={url}
+                      alt={`Generated ${idx + 1}`}
+                      className="clickable-image"
+                      onClick={() => handleImageClick(url, prompts[idx])}
+                    />
+                  </div>
+                  <a
+                    href={url}
+                    download={`generated-image-${idx + 1}.jpg`}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='download-btn'
+                  >
+                    ⬇️ Download Image
+                  </a>
+                  {prompts[idx] && (
+                    <div 
+                      className='prompt-caption'
+                      onClick={() => copyPromptToClipboard(prompts[idx], idx)}
+                      title="Click to copy prompt"
+                    >
+                      {prompts[idx]}
+                      <div className={`copy-feedback ${copiedPrompts[idx] ? 'show' : ''}`}>
+                        Copied!
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Image Modal */}
       {selectedImage && (
