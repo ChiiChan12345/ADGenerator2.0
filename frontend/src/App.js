@@ -406,7 +406,7 @@ function App() {
 
   const handleImageClick = (idx) => {
     if (!selectMode) {
-      setSelectedImage(images[idx]);
+      setSelectedImage({ url: results[idx], prompt: prompts[idx] });
       setShowModal(true);
     }
   };
@@ -425,14 +425,15 @@ function App() {
 
   const handleRegenerateSelected = () => {
     setRegenerating(selectedForRegen);
-    // Actually generate new prompt and image for each selected
     setTimeout(() => {
-      const newImages = images.map((img, idx) =>
-        selectedForRegen.includes(idx)
-          ? { ...img, prompt: generateNewPrompt(), url: getNewImageUrl() }
-          : img
+      const newResults = results.map((url, idx) =>
+        selectedForRegen.includes(idx) ? getNewImageUrl() : url
       );
-      setImages(newImages);
+      const newPrompts = prompts.map((prompt, idx) =>
+        selectedForRegen.includes(idx) ? generateNewPrompt() : prompt
+      );
+      setResults(newResults);
+      setPrompts(newPrompts);
       setRegenerating([]);
       setSelectedForRegen([]);
       setSelectMode(false);
@@ -672,9 +673,6 @@ function App() {
         {results.length > 0 && !loading && (
           <div className='results'>
             <div className="results-header-row">
-              <div className="results-header-folder">
-                <span className="results-folder-icon">📦</span>
-              </div>
               <div className="results-header-buttons">
                 <button className="export-all-btn" onClick={handleExportAll} disabled={loading}>
                   Export all as zip
