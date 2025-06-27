@@ -914,6 +914,137 @@ body::before {
   box-shadow: 0 4px 32px rgba(0,0,0,0.25);
 }
 
+/* --- Improved Horizontal Progress Bar for Results Section --- */
+.progress-bar-horizontal-wrapper.improved {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 32px auto;
+  padding: 24px 0 12px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--glass-bg);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.10);
+  position: relative;
+  z-index: 10;
+}
+.progress-bar-horizontal.improved {
+  width: 90%;
+  height: 22px;
+  background: rgba(255,255,255,0.10);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 12px rgba(102,126,234,0.10);
+}
+.progress-bar-horizontal-fill.improved {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 2px 8px rgba(102,126,234,0.15);
+}
+.progress-bar-horizontal-steps.improved {
+  display: flex;
+  justify-content: space-between;
+  width: 90%;
+  margin-bottom: 6px;
+}
+.progress-bar-horizontal-step.improved {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  opacity: 0.8;
+  padding: 0 6px;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  text-align: center;
+  flex: 1 1 0;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+}
+.progress-bar-horizontal-step.improved.active {
+  color: #667eea;
+  opacity: 1;
+  border-bottom: 3px solid #667eea;
+  background: rgba(102,126,234,0.10);
+}
+.progress-bar-horizontal-step.improved.completed {
+  color: #2ed573;
+  opacity: 1;
+  border-bottom: 3px solid #2ed573;
+  background: rgba(46,213,115,0.10);
+}
+.progress-bar-horizontal-info.improved {
+  display: flex;
+  justify-content: space-between;
+  width: 90%;
+  font-size: var(--font-md);
+  color: var(--text-secondary);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* --- Export All as Zip Button Small --- */
+.export-all-btn.small {
+  font-size: 1rem;
+  padding: 8px 16px;
+  border-radius: 10px;
+  min-width: 0;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.10);
+  margin-bottom: 0;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.export-all-btn.small span[role="img"] {
+  font-size: 1.1em;
+  margin-right: 6px;
+}
+
+/* --- Wider Selects for Age/Images --- */
+.form-group select, .number-input {
+  min-width: 80px;
+  font-size: 1rem;
+}
+
+/* --- Center Download Button --- */
+.download-image-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  margin-bottom: 8px;
+  width: fit-content;
+}
+
+/* --- Regenerating Spinner Overlay --- */
+.regenerating-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(20, 20, 30, 0.55);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+}
+.regenerating-spinner {
+  width: 38px;
+  height: 38px;
+  border: 4px solid #667eea;
+  border-top: 4px solid #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  background: transparent;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* --- Custom Horizontal Progress Bar for Results Section --- */
 .progress-bar-horizontal-wrapper {
   width: 100%;

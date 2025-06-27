@@ -59,6 +59,9 @@ function App() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedForRegen, setSelectedForRegen] = useState([]);
 
+  // Add state for regenerating images
+  const [regenerating, setRegenerating] = useState([]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -418,10 +421,12 @@ function App() {
   };
 
   const handleRegenerateSelected = () => {
-    // Implement regeneration logic for selected images
-    // For now, just clear selection and exit select mode
-    setSelectedForRegen([]);
-    setSelectMode(false);
+    setRegenerating(selectedForRegen);
+    setTimeout(() => {
+      setRegenerating([]);
+      setSelectedForRegen([]);
+      setSelectMode(false);
+    }, 2000); // Simulate regeneration
   };
 
   return (
@@ -552,17 +557,16 @@ function App() {
           <div className="form-group form-row">
             <label style={{ width: '100%' }}>Age Range & Number of Images</label>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              <div style={{ position: 'relative', width: 60 }}>
+              <div style={{ position: 'relative', width: 80 }}>
                 <select value={ageFrom} onChange={e => setAgeFrom(Number(e.target.value))} style={{ width: '100%', paddingRight: 28, backgroundPosition: 'right 8px center' }}>
                   {[...Array(48)].map((_, i) => (
                     <option key={i} value={i + 18}>{i + 18}</option>
                   ))}
                 </select>
-                {/* Custom arrow for select */}
                 <span className="custom-select-arrow" style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>&#9662;</span>
               </div>
               <span style={{ fontWeight: 600, color: '#667eea' }}>to</span>
-              <div style={{ position: 'relative', width: 60 }}>
+              <div style={{ position: 'relative', width: 80 }}>
                 <select value={ageTo} onChange={e => setAgeTo(Number(e.target.value))} style={{ width: '100%', paddingRight: 28, backgroundPosition: 'right 8px center' }}>
                   {[...Array(48)].map((_, i) => (
                     <option key={i} value={i + 18}>{i + 18}</option>
@@ -571,18 +575,18 @@ function App() {
                 <span className="custom-select-arrow" style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>&#9662;</span>
               </div>
               <span style={{ marginLeft: 10, fontWeight: 600 }}>Images:</span>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 60 }}>
-                <input
-                  type="number"
+              <div style={{ position: 'relative', width: 80 }}>
+                <select
                   className="number-input"
                   value={numImages}
-                  onChange={handleNumImagesChange}
-                  min="1"
-                  max="20"
-                  required
-                  style={{ width: '100%' }}
-                />
-                <span style={{ fontSize: '0.7rem', color: '#b0b0b0', marginTop: 2 }}>Max: 20</span>
+                  onChange={e => setNumImages(Number(e.target.value))}
+                  style={{ width: '100%', paddingRight: 28, backgroundPosition: 'right 8px center' }}
+                >
+                  {[...Array(20)].map((_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                  ))}
+                </select>
+                <span className="custom-select-arrow" style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>&#9662;</span>
               </div>
             </div>
           </div>
@@ -597,60 +601,30 @@ function App() {
             )}
           </button>
         </form>
-
-        {/* Progress Bar in Form Section */}
-        <div className={`progress-container ${showProgress ? 'visible' : ''}`}>
-          <div className='progress-wrapper'>
-            <div className='progress-status'>
-              <div className='progress-spinner'></div>
-              <div className='progress-text'>{progressMessage}</div>
-            </div>
-            
-            <div className='progress-bar-container'>
-              <div className='progress-bar' style={{ width: `${progressPercent}%` }}></div>
-            </div>
-            
-            <div className='progress-percentage'>{progressPercent}%</div>
-            
-            <div className='progress-steps'>
-              {progressSteps.map((step, index) => (
-                <div 
-                  key={index} 
-                  className={`progress-step ${
-                    index < currentStep ? 'completed' : 
-                    index === currentStep ? 'active' : ''
-                  }`}
-                >
-                  {step}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Results Section - 80% */}
       <div className="results-section">
         {/* Progress Bar at Top of Results Section */}
         {showProgress && (
-          <div className="progress-bar-horizontal-wrapper">
-            <div className="progress-bar-horizontal">
-              <div className="progress-bar-horizontal-fill" style={{ width: `${progressPercent}%` }}></div>
+          <div className="progress-bar-horizontal-wrapper improved">
+            <div className="progress-bar-horizontal improved">
+              <div className="progress-bar-horizontal-fill improved" style={{ width: `${progressPercent}%` }}></div>
             </div>
-            <div className="progress-bar-horizontal-steps">
+            <div className="progress-bar-horizontal-steps improved">
               {progressSteps.map((step, index) => (
                 <div
                   key={index}
-                  className={`progress-bar-horizontal-step ${
+                  className={`progress-bar-horizontal-step improved ${
                     index < currentStep ? 'completed' : index === currentStep ? 'active' : ''
                   }`}
                 >
-                  {step}
+                  {step === 'Creating new images with AI' ? 'Creating Images' : step}
                 </div>
               ))}
             </div>
-            <div className="progress-bar-horizontal-info">
-              <span>{progressMessage}</span>
+            <div className="progress-bar-horizontal-info improved">
+              <span>{progressMessage.replace('Creating new images with AI', 'Creating Images')}</span>
               <span>{progressPercent}%</span>
             </div>
           </div>
@@ -689,16 +663,16 @@ function App() {
         {/* Results */}
         {results.length > 0 && !loading && (
           <div className='results'>
-            <div className="results-header" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', marginBottom: '18px' }}>
-              <button className="export-all-btn" onClick={handleExportAll} disabled={loading} style={{ marginBottom: 0 }}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ marginRight: 6 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
+            <div className="results-header" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '18px', marginBottom: '18px' }}>
+              <button className="export-all-btn small" onClick={handleExportAll} disabled={loading} style={{ marginBottom: 0, fontSize: '1rem', padding: '8px 16px' }}>
+                <span role="img" aria-label="box" style={{ marginRight: 6 }}>📦</span>
                 Export all as zip
               </button>
-              <button className="generate-button" style={{ width: 'auto', padding: '12px 32px', fontSize: '1.1rem' }} onClick={() => setSelectMode(sm => !sm)} type="button">
+              <button className="generate-button" style={{ width: 'auto', padding: '12px 28px', fontSize: '1.05rem' }} onClick={() => setSelectMode(sm => !sm)} type="button">
                 {selectMode ? 'Cancel Selection' : 'Select to Regenerate'}
               </button>
               {selectMode && selectedForRegen.length > 0 && (
-                <button className="generate-button" style={{ width: 'auto', padding: '12px 32px', fontSize: '1.1rem', background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)' }} onClick={handleRegenerateSelected} type="button">
+                <button className="generate-button" style={{ width: 'auto', padding: '12px 28px', fontSize: '1.05rem', background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)' }} onClick={handleRegenerateSelected} type="button">
                   Regenerate Selected
                 </button>
               )}
@@ -722,6 +696,11 @@ function App() {
                         onClick={e => e.stopPropagation()}
                       />
                     )}
+                    {regenerating.includes(idx) && (
+                      <div className="regenerating-overlay">
+                        <div className="regenerating-spinner"></div>
+                      </div>
+                    )}
                     <LazyImage
                       src={url}
                       alt={`Generated ${idx + 1}`}
@@ -729,15 +708,17 @@ function App() {
                       onClick={selectMode ? undefined : () => handleImageClick(url, prompts[idx])}
                     />
                   </div>
-                  <a
-                    href={url}
-                    download
-                    className="download-image-btn"
-                    title="Download image"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
-                    Download
-                  </a>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
+                    <a
+                      href={url}
+                      download
+                      className="download-image-btn"
+                      title="Download image"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
+                      Download
+                    </a>
+                  </div>
                   {prompts[idx] && (
                     <div className="prompt-text" style={{ cursor: 'default', userSelect: 'text' }}>
                       {prompts[idx]}
