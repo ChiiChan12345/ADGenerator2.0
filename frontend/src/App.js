@@ -4,6 +4,72 @@ import promptGuide from './PromptFORGPT';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
+// Move LazyImage to top level
+const LazyImage = ({ src, alt, className, onClick }) => {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new window.IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          const img = new window.Image();
+          img.onload = () => setLoaded(true);
+          img.onerror = () => setError(true);
+          img.src = src;
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+    return () => observer.disconnect();
+  }, [src]);
+
+  return (
+    <div
+      ref={imgRef}
+      className={`lazy-image ${loaded ? 'loaded' : ''} ${error ? 'error' : ''} ${className}`}
+      onClick={onClick}
+      style={{ width: '100%', height: '100%', minHeight: '200px' }}
+    >
+      {loaded && !error && (
+        <img
+          src={src}
+          alt={alt}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      )}
+      {error && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          color: 'var(--error-color)',
+          fontSize: 'var(--font-sm)'
+        }}>
+          ❌ Failed to load
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Move Tooltip to top level
+const Tooltip = ({ children, text }) => (
+  <div className="tooltip-container">
+    <div className="tooltip-trigger">
+      {children}
+      <span className="tooltip-icon">?</span>
+    </div>
+    <div className="tooltip">{text}</div>
+  </div>
+);
+
 function App() {
   const [images, setImages] = useState([]);
   const [vertical, setVertical] = useState('');
@@ -215,74 +281,6 @@ function App() {
       document.body.removeChild(textArea);
     }
   };
-
-  // Lazy image loading component
-  const LazyImage = ({ src, alt, className, onClick }) => {
-    const [loaded, setLoaded] = useState(false);
-    const [error, setError] = useState(false);
-    const imgRef = useRef(null);
-
-    useEffect(() => {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            const img = new Image();
-            img.onload = () => setLoaded(true);
-            img.onerror = () => setError(true);
-            img.src = src;
-            observer.disconnect();
-          }
-        },
-        { threshold: 0.1 }
-      );
-
-      if (imgRef.current) {
-        observer.observe(imgRef.current);
-      }
-
-      return () => observer.disconnect();
-    }, [src]);
-
-    return (
-      <div 
-        ref={imgRef} 
-        className={`lazy-image ${loaded ? 'loaded' : ''} ${error ? 'error' : ''} ${className}`}
-        onClick={onClick}
-        style={{ width: '100%', height: '100%', minHeight: '200px' }}
-      >
-        {loaded && !error && (
-          <img 
-            src={src} 
-            alt={alt} 
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        )}
-        {error && (
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%',
-            color: 'var(--error-color)',
-            fontSize: 'var(--font-sm)'
-          }}>
-            ❌ Failed to load
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Tooltip component
-  const Tooltip = ({ children, text }) => (
-    <div className="tooltip-container">
-      <div className="tooltip-trigger">
-        {children}
-        <span className="tooltip-icon">?</span>
-      </div>
-      <div className="tooltip">{text}</div>
-    </div>
-  );
 
   // Simulate progress during generation
   const simulateProgress = () => {
