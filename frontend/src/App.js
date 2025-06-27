@@ -425,12 +425,13 @@ function App() {
 
   const handleRegenerateSelected = () => {
     setRegenerating(selectedForRegen);
-    const newImages = images.map((img, idx) =>
-      selectedForRegen.includes(idx)
-        ? { ...img, prompt: generateNewPrompt(), url: getNewImageUrl() }
-        : img
-    );
+    // Actually generate new prompt and image for each selected
     setTimeout(() => {
+      const newImages = images.map((img, idx) =>
+        selectedForRegen.includes(idx)
+          ? { ...img, prompt: generateNewPrompt(), url: getNewImageUrl() }
+          : img
+      );
       setImages(newImages);
       setRegenerating([]);
       setSelectedForRegen([]);
@@ -508,38 +509,40 @@ function App() {
             <label>
               Vertical
             </label>
-            <input
-              type="text"
-              value={vertical}
-              onChange={handleVerticalChange}
-              placeholder="Enter vertical (e.g., Health & Wellness)"
-              required
-            />
-            {fieldErrors.vertical && (
-              <div className="field-hint error">Please enter at least 2 characters</div>
-            )}
-            {vertical && !fieldErrors.vertical && (
-              <div className="field-hint success">✓ Valid vertical specified</div>
-            )}
+            <div className="input-wrapper" style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+              <input
+                type="text"
+                value={vertical}
+                onChange={handleVerticalChange}
+                placeholder="Enter vertical (e.g., Health & Wellness)"
+                required
+              />
+              {validateField('vertical', vertical) && (
+                <span className="input-checkmark" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#28a745', fontSize: 18 }}>
+                  ✓
+                </span>
+              )}
+            </div>
           </div>
 
           <div className={`form-group ${fieldErrors.angle ? 'has-error' : angle ? 'has-success' : ''}`}>
             <label>
               Angle
             </label>
-            <input
-              type="text"
-              value={angle}
-              onChange={handleAngleChange}
-              placeholder="Enter creative angle (e.g., Problem-solution approach)"
-              required
-            />
-            {fieldErrors.angle && (
-              <div className="field-hint error">Please enter at least 5 characters</div>
-            )}
-            {angle && !fieldErrors.angle && (
-              <div className="field-hint success">✓ Good angle description</div>
-            )}
+            <div className="input-wrapper" style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+              <input
+                type="text"
+                value={angle}
+                onChange={handleAngleChange}
+                placeholder="Enter creative angle (e.g., Problem-solution approach)"
+                required
+              />
+              {validateField('angle', angle) && (
+                <span className="input-checkmark" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#28a745', fontSize: 18 }}>
+                  ✓
+                </span>
+              )}
+            </div>
           </div>
 
           <div className={`form-group ${fieldErrors.sentiment ? 'has-error' : sentiment ? 'has-success' : ''}`}>
@@ -602,7 +605,9 @@ function App() {
 
           {error && <div className='error'>{error}</div>}
 
-          <button className="generate-btn" type="submit" disabled={loading}>Generate {numImages} images</button>
+          <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <button className="generate-btn" type="submit" disabled={loading}>Generate {numImages} images</button>
+          </div>
         </form>
       </div>
 
@@ -672,7 +677,6 @@ function App() {
               </div>
               <div className="results-header-buttons">
                 <button className="export-all-btn" onClick={handleExportAll} disabled={loading}>
-                  <span role="img" aria-label="box" style={{ marginRight: 6 }}>📦</span>
                   Export all as zip
                 </button>
                 <button className="results-header-btn regen-btn" onClick={() => setSelectMode(sm => !sm)} type="button">
