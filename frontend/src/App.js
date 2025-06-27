@@ -4,72 +4,6 @@ import promptGuide from './PromptFORGPT';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
-// Move LazyImage to top level
-const LazyImage = ({ src, alt, className, onClick }) => {
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
-  const imgRef = useRef(null);
-
-  useEffect(() => {
-    const observer = new window.IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          const img = new window.Image();
-          img.onload = () => setLoaded(true);
-          img.onerror = () => setError(true);
-          img.src = src;
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-    return () => observer.disconnect();
-  }, [src]);
-
-  return (
-    <div
-      ref={imgRef}
-      className={`lazy-image ${loaded ? 'loaded' : ''} ${error ? 'error' : ''} ${className}`}
-      onClick={onClick}
-      style={{ width: '100%', height: '100%', minHeight: '200px' }}
-    >
-      {loaded && !error && (
-        <img
-          src={src}
-          alt={alt}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      )}
-      {error && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          color: 'var(--error-color)',
-          fontSize: 'var(--font-sm)'
-        }}>
-          ❌ Failed to load
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Move Tooltip to top level
-const Tooltip = ({ children, text }) => (
-  <div className="tooltip-container">
-    <div className="tooltip-trigger">
-      {children}
-      <span className="tooltip-icon">?</span>
-    </div>
-    <div className="tooltip">{text}</div>
-  </div>
-);
-
 function App() {
   const [images, setImages] = useState([]);
   const [vertical, setVertical] = useState('');
@@ -282,6 +216,74 @@ function App() {
     }
   };
 
+  // Lazy image loading component
+  const LazyImage = ({ src, alt, className, onClick }) => {
+    const [loaded, setLoaded] = useState(false);
+    const [error, setError] = useState(false);
+    const imgRef = useRef(null);
+
+    useEffect(() => {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            const img = new Image();
+            img.onload = () => setLoaded(true);
+            img.onerror = () => setError(true);
+            img.src = src;
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.1 }
+      );
+
+      if (imgRef.current) {
+        observer.observe(imgRef.current);
+      }
+
+      return () => observer.disconnect();
+    }, [src]);
+
+    return (
+      <div 
+        ref={imgRef} 
+        className={`lazy-image ${loaded ? 'loaded' : ''} ${error ? 'error' : ''} ${className}`}
+        onClick={onClick}
+        style={{ width: '100%', height: '100%', minHeight: '200px' }}
+      >
+        {loaded && !error && (
+          <img 
+            src={src} 
+            alt={alt} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        )}
+        {error && (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            height: '100%',
+            color: 'var(--error-color)',
+            fontSize: 'var(--font-sm)'
+          }}>
+            ❌ Failed to load
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Tooltip component
+  const Tooltip = ({ children, text }) => (
+    <div className="tooltip-container">
+      <div className="tooltip-trigger">
+        {children}
+        <span className="tooltip-icon">?</span>
+      </div>
+      <div className="tooltip">{text}</div>
+    </div>
+  );
+
   // Simulate progress during generation
   const simulateProgress = () => {
     setShowProgress(true);
@@ -404,7 +406,7 @@ function App() {
 
   const handleImageClick = (idx) => {
     if (!selectMode) {
-      setSelectedImage({ url: results[idx], prompt: prompts[idx] });
+      setSelectedImage(images[idx]);
       setShowModal(true);
     }
   };
@@ -423,15 +425,13 @@ function App() {
 
   const handleRegenerateSelected = () => {
     setRegenerating(selectedForRegen);
+    const newImages = images.map((img, idx) =>
+      selectedForRegen.includes(idx)
+        ? { ...img, prompt: generateNewPrompt(), url: getNewImageUrl() }
+        : img
+    );
     setTimeout(() => {
-      const newResults = results.map((url, idx) =>
-        selectedForRegen.includes(idx) ? getNewImageUrl() : url
-      );
-      const newPrompts = prompts.map((prompt, idx) =>
-        selectedForRegen.includes(idx) ? generateNewPrompt() : prompt
-      );
-      setResults(newResults);
-      setPrompts(newPrompts);
+      setImages(newImages);
       setRegenerating([]);
       setSelectedForRegen([]);
       setSelectMode(false);
@@ -508,40 +508,38 @@ function App() {
             <label>
               Vertical
             </label>
-            <div className="input-wrapper" style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
-              <input
-                type="text"
-                value={vertical}
-                onChange={handleVerticalChange}
-                placeholder="Enter vertical (e.g., Health & Wellness)"
-                required
-              />
-              {validateField('vertical', vertical) && (
-                <span className="input-checkmark" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#28a745', fontSize: 18 }}>
-                  ✓
-                </span>
-              )}
-            </div>
+            <input
+              type="text"
+              value={vertical}
+              onChange={handleVerticalChange}
+              placeholder="Enter vertical (e.g., Health & Wellness)"
+              required
+            />
+            {fieldErrors.vertical && (
+              <div className="field-hint error">Please enter at least 2 characters</div>
+            )}
+            {vertical && !fieldErrors.vertical && (
+              <div className="field-hint success">✓ Valid vertical specified</div>
+            )}
           </div>
 
           <div className={`form-group ${fieldErrors.angle ? 'has-error' : angle ? 'has-success' : ''}`}>
             <label>
               Angle
             </label>
-            <div className="input-wrapper" style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
-              <input
-                type="text"
-                value={angle}
-                onChange={handleAngleChange}
-                placeholder="Enter creative angle (e.g., Problem-solution approach)"
-                required
-              />
-              {validateField('angle', angle) && (
-                <span className="input-checkmark" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#28a745', fontSize: 18 }}>
-                  ✓
-                </span>
-              )}
-            </div>
+            <input
+              type="text"
+              value={angle}
+              onChange={handleAngleChange}
+              placeholder="Enter creative angle (e.g., Problem-solution approach)"
+              required
+            />
+            {fieldErrors.angle && (
+              <div className="field-hint error">Please enter at least 5 characters</div>
+            )}
+            {angle && !fieldErrors.angle && (
+              <div className="field-hint success">✓ Good angle description</div>
+            )}
           </div>
 
           <div className={`form-group ${fieldErrors.sentiment ? 'has-error' : sentiment ? 'has-success' : ''}`}>
@@ -604,9 +602,7 @@ function App() {
 
           {error && <div className='error'>{error}</div>}
 
-          <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <button className="generate-btn" type="submit" disabled={loading}>Generate {numImages} images</button>
-          </div>
+          <button className="generate-btn" type="submit" disabled={loading}>Generate {numImages} images</button>
         </form>
       </div>
 
@@ -671,8 +667,12 @@ function App() {
         {results.length > 0 && !loading && (
           <div className='results'>
             <div className="results-header-row">
+              <div className="results-header-folder">
+                <span className="results-folder-icon">📦</span>
+              </div>
               <div className="results-header-buttons">
                 <button className="export-all-btn" onClick={handleExportAll} disabled={loading}>
+                  <span role="img" aria-label="box" style={{ marginRight: 6 }}>📦</span>
                   Export all as zip
                 </button>
                 <button className="results-header-btn regen-btn" onClick={() => setSelectMode(sm => !sm)} type="button">

@@ -412,16 +412,16 @@ body::before {
   color: #fff;
   font-weight: 600;
   border-radius: 10px;
-  min-width: 160px;
-  height: 48px;
-  font-size: 1.15rem;
+  min-width: 140px;
+  height: 40px;
+  font-size: 1.05rem;
   border: none;
   box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-left: 18px;
+  padding-right: 18px;
   transition: background 0.2s, box-shadow 0.2s;
   cursor: pointer;
 }
@@ -1244,13 +1244,4 @@ body::before {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-.vertical-label {
-  margin-bottom: 2px !important;
-  padding-bottom: 0 !important;
-}
-.vertical-image-select {
-  margin-top: 2px !important;
-  padding-top: 0 !important;
 }
